@@ -1,6 +1,6 @@
 ---
 title: "JSC370 Final Project"
-author: "Your Name"
+author: Mahathi Gandhamaneni
 output: 
     html_document:
         toc: TRUE
