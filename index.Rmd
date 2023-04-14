@@ -1,5 +1,5 @@
 ---
-title: "JSC370 Final Project"
+title: "Lab 12"
 author: Mahathi Gandhamaneni
 output: 
     html_document:

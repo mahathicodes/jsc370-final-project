@@ -1,7 +1,9 @@
-name: "my-website"
+name: "JSC370 Final Project Website"
 output_dir: "docs"
 navbar:
-  title: "My Website"
+  title: "Final Project Website"
   left:
-    - text: "Home"
+    - text: "Lab 12"
       href: index.html
+    - text: "A5"
+      href: HW5.html

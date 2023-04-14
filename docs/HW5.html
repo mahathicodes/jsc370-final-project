@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Mahathi Gandhamaneni" />
+
+
+<title>Assignment 5 - Interactive Visualization I and II</title>
+
+<script src="site_libs/header-attrs-2.19/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.6.1/htmlwidgets.js"></script>
+<script src="site_libs/plotly-binding-4.10.1/plotly.js"></script>
+<script src="site_libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="site_libs/crosstalk-1.2.0/css/crosstalk.min.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.2.0/js/crosstalk.min.js"></script>
+<link href="site_libs/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="site_libs/plotly-main-2.11.1/plotly-latest.min.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Final Project Website</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Lab 12</a>
+</li>
+<li>
+  <a href="HW5.html">A5</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Assignment 5 - Interactive Visualization I
+and II</h1>
+<h4 class="author">Mahathi Gandhamaneni</h4>
+
+</div>
+
+
+<p>Almost all the categorical variables in the dataset are numerically
+encoded (the numeric encoding key/values can be found at <a
+href="https://www.mdpi.com/2306-5729/7/11/146"
+class="uri">https://www.mdpi.com/2306-5729/7/11/146</a>). In order to
+simplify visualization at the moment, I have decided to leave the
+encoding as is.</p>
+<div id="visualization-1" class="section level2">
+<h2>Visualization 1</h2>
+<pre class="r"><code>df_counts &lt;- df %&gt;% group_by(Target, Prev_quali) %&gt;% count()
+
+plot_ly(
+  df_counts,
+  x = ~ Prev_quali,
+  y = ~ n,
+  color = ~ Target,
+  size = ~ n,
+  type = &quot;scatter&quot;,
+  sizes = c(5, 1000),
+  marker = list(sizemode = &quot;area&quot;, opacity = .8)
+) %&gt;% 
+  layout(title=&quot;Number of Students by Previous qualification and Target value&quot;, xaxis= list(title=&quot;Previous qualification&quot;), yaxis=list(title=&quot;Count&quot;))</code></pre>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-d570460ff84d1954f82a" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-d570460ff84d1954f82a">{"x":{"visdat":{"5a98e7012a7":["function () ","plotlyVisDat"]},"cur_data":"5a98e7012a7","attrs":{"5a98e7012a7":{"x":{},"y":{},"marker":{"sizemode":"area","opacity":0.8},"color":{},"size":{},"alpha_stroke":1,"sizes":[5,1000],"spans":[1,20],"type":"scatter"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"Number of Students by Previous qualification and Target value","xaxis":{"domain":[0,1],"automargin":true,"title":"Previous qualification"},"yaxis":{"domain":[0,1],"automargin":true,"title":"Count"},"hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17],"y":[1078,16,75,4,1,7,11,3,26,1,1,104,3,69,14,6,2],"marker":{"color":"rgba(102,194,165,1)","size":[557.378865979381,12.6932989690722,42.9536082474227,6.53865979381443,5,8.07731958762887,10.1288659793814,6.02577319587629,17.8221649484536,5,5,57.8273195876289,6.02577319587629,39.8762886597938,11.6675257731959,7.56443298969072,5.51288659793814],"sizemode":"area","opacity":0.8,"line":{"color":"rgba(102,194,165,1)"}},"type":"scatter","mode":"markers","name":"Dropout","textfont":{"color":"rgba(102,194,165,1)","size":[557.378865979381,12.6932989690722,42.9536082474227,6.53865979381443,5,8.07731958762887,10.1288659793814,6.02577319587629,17.8221649484536,5,5,57.8273195876289,6.02577319587629,39.8762886597938,11.6675257731959,7.56443298969072,5.51288659793814]},"error_y":{"color":"rgba(102,194,165,1)","width":[]},"error_x":{"color":"rgba(102,194,165,1)","width":[]},"line":{"color":"rgba(102,194,165,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[1,2,3,4,6,9,12,13,14,15,16],"y":[698,1,4,1,1,6,13,1,55,6,8],"marker":{"color":"rgba(252,141,98,1)","size":[362.481958762887,5,6.53865979381443,5,5,7.56443298969072,11.1546391752577,5,32.6958762886598,7.56443298969072,8.59020618556701],"sizemode":"area","opacity":0.8,"line":{"color":"rgba(252,141,98,1)"}},"type":"scatter","mode":"markers","name":"Enrolled","textfont":{"color":"rgba(252,141,98,1)","size":[362.481958762887,5,6.53865979381443,5,5,7.56443298969072,11.1546391752577,5,32.6958762886598,7.56443298969072,8.59020618556701]},"error_y":{"color":"rgba(252,141,98,1)","width":[]},"error_x":{"color":"rgba(252,141,98,1)","width":[]},"line":{"color":"rgba(252,141,98,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[1,2,3,4,6,8,9,11,12,13,14,15,16,17],"y":[1941,6,47,3,8,1,13,1,45,3,95,20,22,4],"marker":{"color":"rgba(141,160,203,1)","size":[1000,7.56443298969072,28.5927835051546,6.02577319587629,8.59020618556701,5,11.1546391752577,5,27.5670103092783,6.02577319587629,53.2113402061856,14.7448453608247,15.770618556701,6.53865979381443],"sizemode":"area","opacity":0.8,"line":{"color":"rgba(141,160,203,1)"}},"type":"scatter","mode":"markers","name":"Graduate","textfont":{"color":"rgba(141,160,203,1)","size":[1000,7.56443298969072,28.5927835051546,6.02577319587629,8.59020618556701,5,11.1546391752577,5,27.5670103092783,6.02577319587629,53.2113402061856,14.7448453608247,15.770618556701,6.53865979381443]},"error_y":{"color":"rgba(141,160,203,1)","width":[]},"error_x":{"color":"rgba(141,160,203,1)","width":[]},"line":{"color":"rgba(141,160,203,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="visualization-2" class="section level2">
+<h2>Visualization 2</h2>
+<pre class="r"><code>df_counts &lt;- df %&gt;% group_by(Program) %&gt;% count()
+
+plot &lt;- ggplot(df_counts, aes(x = Program, y = n)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;#4C78A8&quot;) +
+  labs(title = &quot;Number of Students by Program&quot;, x = &quot;Program&quot;, y = &quot;Count&quot;) +
+  theme_minimal()
+
+plotly_plot &lt;- ggplotly(plot)
+plotly_plot </code></pre>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-7749dce804c741267d8a" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-7749dce804c741267d8a">{"x":{"data":[{"orientation":"v","width":[0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999],"base":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"x":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17],"y":[12,215,215,210,226,337,170,141,380,355,252,766,86,268,331,192,268],"text":["Program:  1<br />n:  12","Program:  2<br />n: 215","Program:  3<br />n: 215","Program:  4<br />n: 210","Program:  5<br />n: 226","Program:  6<br />n: 337","Program:  7<br />n: 170","Program:  8<br />n: 141","Program:  9<br />n: 380","Program: 10<br />n: 355","Program: 11<br />n: 252","Program: 12<br />n: 766","Program: 13<br />n:  86","Program: 14<br />n: 268","Program: 15<br />n: 331","Program: 16<br />n: 192","Program: 17<br />n: 268"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(76,120,168,1)","line":{"width":1.88976377952756,"color":"transparent"}},"showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":43.7625570776256,"r":7.30593607305936,"b":40.1826484018265,"l":43.1050228310502},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"title":{"text":"Number of Students by Program","font":{"color":"rgba(0,0,0,1)","family":"","size":17.5342465753425},"x":0,"xref":"paper"},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.295,18.295],"tickmode":"array","ticktext":["0","5","10","15"],"tickvals":[0,5,10,15],"categoryorder":"array","categoryarray":["0","5","10","15"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":{"text":"Program","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-38.3,804.3],"tickmode":"array","ticktext":["0","200","400","600","800"],"tickvals":[0,200,400,600,800],"categoryorder":"array","categoryarray":["0","200","400","600","800"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":{"text":"Count","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"5a98193b4700":{"x":{},"y":{},"type":"bar"}},"cur_data":"5a98193b4700","visdat":{"5a98193b4700":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="visualization-3" class="section level2">
+<h2>Visualization 3</h2>
+<pre class="r"><code>df_counts &lt;- df %&gt;% group_by(Program, Target) %&gt;% count()
+
+plot_ly(
+  df_counts,
+  x = ~ Program,
+  y = ~ n,
+  color = ~ Target,
+  size = ~ n,
+  type = &quot;scatter&quot;,
+  sizes = c(5, 1000),
+  marker = list(sizemode = &quot;area&quot;, opacity = .8)
+) %&gt;% 
+  layout(title=&quot;Number of Students by Program and Target value&quot;, xaxis= list(title=&quot;Program&quot;), yaxis=list(title=&quot;Count&quot;))</code></pre>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-2021ebc429ff0f432ff9" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-2021ebc429ff0f432ff9">{"x":{"visdat":{"5a983a887e7c":["function () ","plotlyVisDat"]},"cur_data":"5a983a887e7c","attrs":{"5a983a887e7c":{"x":{},"y":{},"marker":{"sizemode":"area","opacity":0.8},"color":{},"size":{},"alpha_stroke":1,"sizes":[5,1000],"spans":[1,20],"type":"scatter"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"Number of Students by Program and Target value","xaxis":{"domain":[0,1],"automargin":true,"title":"Program"},"yaxis":{"domain":[0,1],"automargin":true,"title":"Count"},"hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17],"y":[8,82,71,86,51,90,92,78,134,65,96,118,33,95,101,85,136],"marker":{"color":"rgba(102,194,165,1)","size":[17.7330895795247,152.340036563071,132.330895795247,159.616087751371,95.9506398537477,166.892138939671,170.530164533821,145.063985374771,246.928702010969,121.416819012797,177.806215722121,217.82449725777,63.2084095063985,175.987202925046,186.901279707495,157.797074954296,250.566727605119],"sizemode":"area","opacity":0.8,"line":{"color":"rgba(102,194,165,1)"}},"type":"scatter","mode":"markers","name":"Dropout","textfont":{"color":"rgba(102,194,165,1)","size":[17.7330895795247,152.340036563071,132.330895795247,159.616087751371,95.9506398537477,166.892138939671,170.530164533821,145.063985374771,246.928702010969,121.416819012797,177.806215722121,217.82449725777,63.2084095063985,175.987202925046,186.901279707495,157.797074954296,250.566727605119]},"error_y":{"color":"rgba(102,194,165,1)","width":[]},"error_x":{"color":"rgba(102,194,165,1)","width":[]},"line":{"color":"rgba(102,194,165,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17],"y":[3,37,21,37,42,75,64,21,108,42,41,100,17,48,34,50,54],"marker":{"color":"rgba(252,141,98,1)","size":[8.63802559414991,70.4844606946984,41.3802559414991,70.4844606946984,79.5795246800731,139.606946983547,119.597806215722,41.3802559414991,199.63436928702,79.5795246800731,77.7605118829982,185.08226691042,34.1042047531993,90.4936014625229,65.0274223034735,94.1316270566728,101.407678244973],"sizemode":"area","opacity":0.8,"line":{"color":"rgba(252,141,98,1)"}},"type":"scatter","mode":"markers","name":"Enrolled","textfont":{"color":"rgba(252,141,98,1)","size":[8.63802559414991,70.4844606946984,41.3802559414991,70.4844606946984,79.5795246800731,139.606946983547,119.597806215722,41.3802559414991,199.63436928702,79.5795246800731,77.7605118829982,185.08226691042,34.1042047531993,90.4936014625229,65.0274223034735,94.1316270566728,101.407678244973]},"error_y":{"color":"rgba(252,141,98,1)","width":[]},"error_x":{"color":"rgba(252,141,98,1)","width":[]},"line":{"color":"rgba(252,141,98,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17],"y":[1,96,123,87,133,172,14,42,138,248,115,548,36,125,196,57,78],"marker":{"color":"rgba(141,160,203,1)","size":[5,177.806215722121,226.919561243144,161.435100548446,245.109689213894,316.051188299817,28.6471663619744,79.5795246800731,254.204753199269,454.296160877514,212.367458866545,1000,68.6654478976234,230.557586837294,359.707495429616,106.864716636197,145.063985374771],"sizemode":"area","opacity":0.8,"line":{"color":"rgba(141,160,203,1)"}},"type":"scatter","mode":"markers","name":"Graduate","textfont":{"color":"rgba(141,160,203,1)","size":[5,177.806215722121,226.919561243144,161.435100548446,245.109689213894,316.051188299817,28.6471663619744,79.5795246800731,254.204753199269,454.296160877514,212.367458866545,1000,68.6654478976234,230.557586837294,359.707495429616,106.864716636197,145.063985374771]},"error_y":{"color":"rgba(141,160,203,1)","width":[]},"error_x":{"color":"rgba(141,160,203,1)","width":[]},"line":{"color":"rgba(141,160,203,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
