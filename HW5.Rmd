@@ -75,19 +75,20 @@ Almost all the categorical variables in the dataset are numerically encoded (the
 ## Visualization 1
 
 ```{r, message=FALSE, error=FALSE, warning=FALSE}
-df_counts <- df %>% group_by(Age, Target) %>% count()
+df$Gender <- as.factor(df$Gender)
+df_counts <- df %>% group_by(Age, Gender) %>% count()
 
 plot_ly(
   df_counts,
   x = ~ Age,
   y = ~ n,
-  color = ~ Target,
+  color = ~ Gender,
   size = ~ n,
   type = "scatter",
   sizes = c(5, 1000),
   marker = list(sizemode = "area", opacity = .8)
 ) %>% 
-  layout(title="Number of Students by Age and Target value", xaxis= list(title="Age"), yaxis=list(title="Count"))
+  layout(title="Number of Students by Age and Gender", xaxis= list(title="Age"), yaxis=list(title="Count"))
 ```
 
 ## Visualization 2
