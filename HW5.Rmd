@@ -17,6 +17,7 @@ library(vtable)
 library(plotly)
 library(widgetframe)
 ```
+
 ```{r, include=FALSE}
 
 life_expectancy <- data.frame()
@@ -53,6 +54,7 @@ df <- read.csv("dataset.csv")
 df <- merge(x=df,y=life_expectancy, 
              by="Nacionality", all.x=TRUE)
 ```
+
 ```{r, include=FALSE}
 df <- df %>% select(Nacionality, Course, Previous.qualification, Mother.s.qualification, Father.s.qualification, Gender, Age.at.enrollment, Unemployment.rate, Target, value)
 df <- rename(df, Nationality = Nacionality)
@@ -68,17 +70,16 @@ summary(df)
 # apply(df, 2, unique)
 ```
 
-Almost all the categorical variables in the dataset are numerically encoded (the numeric encoding key/values can be found at https://www.mdpi.com/2306-5729/7/11/146). In order to simplify visualization at the moment, I have decided to leave the encoding as is.
-
+Almost all the categorical variables in the dataset are numerically encoded (the numeric encoding key/values can be found at <https://www.mdpi.com/2306-5729/7/11/146>). In order to simplify visualization at the moment, I have decided to leave the encoding as is.
 
 ## Visualization 1
 
 ```{r, message=FALSE, error=FALSE, warning=FALSE}
-df_counts <- df %>% group_by(Target, Prev_quali) %>% count()
+df_counts <- df %>% group_by(Age, Target) %>% count()
 
 plot_ly(
   df_counts,
-  x = ~ Prev_quali,
+  x = ~ Age,
   y = ~ n,
   color = ~ Target,
   size = ~ n,
@@ -86,7 +87,7 @@ plot_ly(
   sizes = c(5, 1000),
   marker = list(sizemode = "area", opacity = .8)
 ) %>% 
-  layout(title="Number of Students by Previous qualification and Target value", xaxis= list(title="Previous qualification"), yaxis=list(title="Count"))
+  layout(title="Number of Students by Age and Target value", xaxis= list(title="Age"), yaxis=list(title="Count"))
 ```
 
 ## Visualization 2
