@@ -48,7 +48,7 @@ life_expectancy <- bind_rows(life_expectancy, lp_df)
 life_expectancy <- life_expectancy %>% select(countryiso3code, value)
 life_expectancy <- cbind(Nacionality = 1:nrow(life_expectancy), life_expectancy)
 
-df <- read.csv("dataset.csv")
+df <- read.csv("data/dataset.csv")
 
 # Left join
 df <- merge(x=df,y=life_expectancy, 
@@ -289,7 +289,7 @@ This visualization shows the number of students by program that dropped out, gra
 
 Here is a link to the PDF report.
 
-[Download PDF](../finalproj.html){.btn .btn-primary}
+[Download PDF](https://github.com/mahathicodes/jsc370-final-project/blob/master/finalproj.pdf){.btn .btn-primary}
 
 Here is a link to the presentation. The passcode to access it is hiGgP&.1wV
 
