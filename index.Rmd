@@ -1,139 +1,296 @@
 ---
-title: "Lab 12"
+title: "Final Project"
 author: Mahathi Gandhamaneni
 output: 
-    html_document:
-        toc: TRUE
-        toc_float: TRUE
+  html_document:
+    html_preview: false
+link-citations: yes
 ---
 
-<br>
-
-This is my JSC370 Final Project website. I will showcase a few interactive visuals here.
-
-<br>
-
-```{r setup, message=FALSE, echo=FALSE, warning=FALSE}
-
-library(data.table)
+```{r, include=FALSE}
+library(httr)
 library(tidyverse)
-library(dplyr)
-library(plotly)
-library(DT)
+library(xml2)
+library(stringr)
 library(knitr)
-
-# Initialize code chunk options
-opts_chunk$set(
-  warning = FALSE,
-  message = FALSE,
-  eval=TRUE,
-  echo = TRUE,
-  cache = FALSE,
-  fig.width = 7, 
-  fig.align = 'center',
-  fig.asp = 0.618,
-  out.width = "700px",
-  class.source = "code-r")
+library(vtable)
+library(plotly)
+library(widgetframe)
 ```
 
-```{css, echo = FALSE}
-.code-r { /* Code block */
-  font-size: 15px;
+```{r, include=FALSE}
+
+life_expectancy <- data.frame()
+
+# List of countries to scrape
+countries <- c("PRT", "DEU", "ESP", "ITA", "NLD", "GBR", "LTU", "AGO", "CPV", "GIN", "MOZ", "STP", "TUR", "BRA", "ROU", "MDA", "MEX", "UKR", "RUS", "CUB", "COL")
+
+for (i in 1:length(countries)) {
+  url <- paste0("http://api.worldbank.org/v2/country/", tolower(gsub(" ", "%20", countries[i])), "/indicator/SP.DYN.LE00.IN?date=2019")
+
+restaurant_license_xml = as_list(read_xml(url))
+
+xml_df = tibble::as_tibble(restaurant_license_xml) %>%
+  unnest_wider(data)
+
+lp_df = xml_df %>%
+  unnest(cols = names(.)) %>%
+  unnest(cols = names(.)) %>%
+  # convert data type
+  readr::type_convert()
+
+# lp_df <- lp_df %>% unnest_wider(data_id)
+
+life_expectancy <- bind_rows(life_expectancy, lp_df)
+
 }
 
-.code-r-small { /* Code block */
-  font-size: 10px;
-}
+life_expectancy <- life_expectancy %>% select(countryiso3code, value)
+life_expectancy <- cbind(Nacionality = 1:nrow(life_expectancy), life_expectancy)
+
+df <- read.csv("dataset.csv")
+
+# Left join
+df <- merge(x=df,y=life_expectancy, 
+             by="Nacionality", all.x=TRUE)
 ```
 
-<br>
+```{r, include=FALSE}
+df <- df %>% select(Nacionality, Course, Previous.qualification, Mother.s.qualification, Father.s.qualification, Gender, Age.at.enrollment, Unemployment.rate, Target, value)
+df <- rename(df, Nationality = Nacionality)
+df <- rename(df, Prev_quali = Previous.qualification)
+df <-rename(df, Mom_quali = Mother.s.qualification)
+df <-rename(df, Dad_quali = Father.s.qualification)
+df <-rename(df, Age = Age.at.enrollment)
+df <-rename(df, Unemp_rate = Unemployment.rate)
+df <-rename(df, Life_expectancy = value)
+df <-rename(df, Program = Course)
 
-## First step
-
-First I will source any necessary code, e.g. `process_covid_data.R`:
-
-```{r load-data}
-source("process_COVID_data.R")
+summary(df)
+# apply(df, 2, unique)
 ```
 
-<br>
+```{r, include=FALSE}
+# undoing numerical encoding
 
-## Second step
+# nationality
+df$Nationality[df$Nationality == "1"] <- "Portuguese"
+df$Nationality[df$Nationality == "2"] <- "German"
+df$Nationality[df$Nationality == "3"] <- "Spanish"
+df$Nationality[df$Nationality == "4"] <- "Italian"
+df$Nationality[df$Nationality == "5"] <- "Dutch"
+df$Nationality[df$Nationality == "6"] <- "English"
+df$Nationality[df$Nationality == "7"] <- "Lithuanian"
+df$Nationality[df$Nationality == "8"] <- "Angolan"
+df$Nationality[df$Nationality == "9"] <- "Cape Verdean"
+df$Nationality[df$Nationality == "10"] <- "Guinean"
+df$Nationality[df$Nationality == "11"] <- "Mozambican"
+df$Nationality[df$Nationality == "12"] <- "Santomean"
+df$Nationality[df$Nationality == "13"] <- "Turkish"
+df$Nationality[df$Nationality == "14"] <- "Brazilian"
+df$Nationality[df$Nationality == "15"] <- "Romanian"
+df$Nationality[df$Nationality == "16"] <- "Moldova (Republic of)"
+df$Nationality[df$Nationality == "17"] <- "Mexican"
+df$Nationality[df$Nationality == "18"] <- "Ukrainian"
+df$Nationality[df$Nationality == "19"] <- "Russian"
+df$Nationality[df$Nationality == "20"] <- "Cuban"
+df$Nationality[df$Nationality == "21"] <- "Colombian"
 
-Then I will add some code to create the **plotly** figures
+#course
+df$Program[df$Program == "1"] <- "Biofuel Production Technologies"
+df$Program[df$Program == "2"] <- "Animation and Multimedia Design"
+df$Program[df$Program == "3"] <- "Social Service (evening attendance)"
+df$Program[df$Program == "4"] <- "Agronomy"
+df$Program[df$Program == "5"] <- "Communication Design"
+df$Program[df$Program == "6"] <- "Veterinary Nursing"
+df$Program[df$Program == "7"] <- "Informatics Engineering"
+df$Program[df$Program == "8"] <- "Equiniculture"
+df$Program[df$Program == "9"] <- "Management"
+df$Program[df$Program == "10"] <- "Social Service"
+df$Program[df$Program == "11"] <- "Tourism"
+df$Program[df$Program == "12"] <- "Nursing"
+df$Program[df$Program == "13"] <- "Oral Hygiene"
+df$Program[df$Program == "14"] <- "Advertising and Marketing Management"
+df$Program[df$Program == "15"] <- "Journalism and Communication"
+df$Program[df$Program == "16"] <- "Basic Education"
+df$Program[df$Program == "17"] <- "Management (evening attendance)"
 
-Note: You need to name each code chunk, like this one: `plot1`
+#prev quali
+df$Prev_quali[df$Prev_quali == "1"] <- "Secondary education"
+df$Prev_quali[df$Prev_quali == "2"] <- "Higher education—bachelor’s degree"
+df$Prev_quali[df$Prev_quali == "3"] <- "Higher education—degree"
+df$Prev_quali[df$Prev_quali == "4"] <- "Higher education—master’s degree"
+df$Prev_quali[df$Prev_quali == "5"] <- "Higher education—doctorate"
+df$Prev_quali[df$Prev_quali == "6"] <- "Frequency of higher education"
+df$Prev_quali[df$Prev_quali == "7"] <- "12th year of schooling—not completed"
+df$Prev_quali[df$Prev_quali == "8"] <- "11th year of schooling—not completed"
+df$Prev_quali[df$Prev_quali == "9"] <- "Other—11th year of schooling"
+df$Prev_quali[df$Prev_quali == "10"] <- "10th year of schooling"
+df$Prev_quali[df$Prev_quali == "11"] <- "10th year of schooling—not completed"
+df$Prev_quali[df$Prev_quali == "12"] <- "Basic education 3rd cycle (9th/10th/11th year) or equivalent"
+df$Prev_quali[df$Prev_quali == "13"] <- "Basic education 2nd cycle (6th/7th/8th year) or equivalent"
+df$Prev_quali[df$Prev_quali == "14"] <- "Technological specialization course"
+df$Prev_quali[df$Prev_quali == "15"] <- "Higher education—degree (1st cycle)"
+df$Prev_quali[df$Prev_quali == "16"] <- "Professional higher technical course"
+df$Prev_quali[df$Prev_quali == "17"] <- "Higher education—master’s degree (2nd cycle)"
 
-```{r plot1, class.source="code-r-small"}
+#mothers quali
+df$Mom_quali[df$Mom_quali == "1"] <- "Secondary Education—12th Year of Schooling or Equivalent"
+df$Mom_quali[df$Mom_quali == "2"] <- "Higher Education—bachelor’s degree"
+df$Mom_quali[df$Mom_quali == "3"] <- "Higher Education—degree"
+df$Mom_quali[df$Mom_quali == "4"] <- "Higher Education—master’s degree"
+df$Mom_quali[df$Mom_quali == "5"] <- "Higher Education—doctorate"
+df$Mom_quali[df$Mom_quali == "6"] <- "Frequency of Higher Education"
+df$Mom_quali[df$Mom_quali == "7"] <- "12th Year of Schooling—not completed"
+df$Mom_quali[df$Mom_quali == "8"] <- "11th Year of Schooling—not completed"
+df$Mom_quali[df$Mom_quali == "9"] <- "7th Year (Old)"
+df$Mom_quali[df$Mom_quali == "10"] <- "Other—11th Year of Schooling"
+df$Mom_quali[df$Mom_quali == "11"] <- "2nd year complementary high school course"
+df$Mom_quali[df$Mom_quali == "12"] <- "10th Year of Schooling"
+df$Mom_quali[df$Mom_quali == "13"] <- "General commerce course"
+df$Mom_quali[df$Mom_quali == "14"] <- "Basic Education 3rd Cycle (9th/10th/11th Year) or Equivalent"
+df$Mom_quali[df$Mom_quali == "15"] <- "Complementary High School Course"
+df$Mom_quali[df$Mom_quali == "16"] <- "Technical-professional course"
+df$Mom_quali[df$Mom_quali == "17"] <- "Complementary High School Course—not concluded"
+df$Mom_quali[df$Mom_quali == "18"] <- "7th year of schooling"
+df$Mom_quali[df$Mom_quali == "19"] <- "2nd cycle of the general high school course"
+df$Mom_quali[df$Mom_quali == "20"] <- "9th Year of Schooling—not completed"
+df$Mom_quali[df$Mom_quali == "21"] <- "8th year of schooling"
+df$Mom_quali[df$Mom_quali == "22"] <- "General Course of Administration and Commerce"
+df$Mom_quali[df$Mom_quali == "23"] <- "Supplementary Accounting and Administration"
+df$Mom_quali[df$Mom_quali == "24"] <- "Unknown"
+df$Mom_quali[df$Mom_quali == "25"] <- "Cannot read or write"
+df$Mom_quali[df$Mom_quali == "26"] <- "Can read without having a 4th year of schooling"
+df$Mom_quali[df$Mom_quali == "27"] <- "Basic education 1st cycle (4th/5th year) or equivalent"
+df$Mom_quali[df$Mom_quali == "28"] <- "Basic Education 2nd Cycle (6th/7th/8th Year) or equivalent"
+df$Mom_quali[df$Mom_quali == "29"] <- "Technological specialization course"
+df$Mom_quali[df$Mom_quali == "30"] <- "Higher education—degree (1st cycle)"
+df$Mom_quali[df$Mom_quali == "31"] <- "Specialized higher studies course"
+df$Mom_quali[df$Mom_quali == "32"] <- "Professional higher technical course"
+df$Mom_quali[df$Mom_quali == "33"] <- "Higher Education—master’s degree (2nd cycle)"
+df$Mom_quali[df$Mom_quali == "34"] <- "Higher Education—doctorate (3rd cycle)"
 
-p1_scatter <- cv_states_today %>% 
-  plot_ly(x = ~pop_density, y = ~deathsper100k,
-          type = 'scatter', mode = 'markers', color = ~state,
-          size = ~population, sizes = c(5, 70), marker = list(sizemode='diameter', opacity=0.5),
-          hoverinfo = 'text',
-          text = ~paste( paste(state, ":", sep=""), paste(" Cases per 100k: ", per100k, sep="") , paste(" Deaths per 100k: ",
-                        deathsper100k, sep=""), sep = "<br>")) %>%
-  layout(title = "Population-normalized COVID-19 deaths vs. population density",
-                  yaxis = list(title = "Deaths per 100k"), xaxis = list(title = "Population Density"),
-         hovermode = "compare")
+#fathers quali
+df$Dad_quali[df$Dad_quali == "1"] <- "Secondary Education—12th Year of Schooling or Equivalent"
+df$Dad_quali[df$Dad_quali == "2"] <- "Higher Education—bachelor’s degree"
+df$Dad_quali[df$Dad_quali == "3"] <- "Higher Education—degree"
+df$Dad_quali[df$Dad_quali == "4"] <- "Higher Education—master’s degree"
+df$Dad_quali[df$Dad_quali == "5"] <- "Higher Education—doctorate"
+df$Dad_quali[df$Dad_quali == "6"] <- "Frequency of Higher Education"
+df$Dad_quali[df$Dad_quali == "7"] <- "12th Year of Schooling—not completed"
+df$Dad_quali[df$Dad_quali == "8"] <- "11th Year of Schooling—not completed"
+df$Dad_quali[df$Dad_quali == "9"] <- "7th Year (Old)"
+df$Dad_quali[df$Dad_quali == "10"] <- "Other—11th Year of Schooling"
+df$Dad_quali[df$Dad_quali == "11"] <- "2nd year complementary high school course"
+df$Dad_quali[df$Dad_quali == "12"] <- "10th Year of Schooling"
+df$Dad_quali[df$Dad_quali == "13"] <- "General commerce course"
+df$Dad_quali[df$Dad_quali == "14"] <- "Basic Education 3rd Cycle (9th/10th/11th Year) or Equivalent"
+df$Dad_quali[df$Dad_quali == "15"] <- "Complementary High School Course"
+df$Dad_quali[df$Dad_quali == "16"] <- "Technical-professional course"
+df$Dad_quali[df$Dad_quali == "17"] <- "Complementary High School Course—not concluded"
+df$Dad_quali[df$Dad_quali == "18"] <- "7th year of schooling"
+df$Dad_quali[df$Dad_quali == "19"] <- "2nd cycle of the general high school course"
+df$Dad_quali[df$Dad_quali == "20"] <- "9th Year of Schooling—not completed"
+df$Dad_quali[df$Dad_quali == "21"] <- "8th year of schooling"
+df$Dad_quali[df$Dad_quali == "22"] <- "General Course of Administration and Commerce"
+df$Dad_quali[df$Dad_quali == "23"] <- "Supplementary Accounting and Administration"
+df$Dad_quali[df$Dad_quali == "24"] <- "Unknown"
+df$Dad_quali[df$Dad_quali == "25"] <- "Cannot read or write"
+df$Dad_quali[df$Dad_quali == "26"] <- "Can read without having a 4th year of schooling"
+df$Dad_quali[df$Dad_quali == "27"] <- "Basic education 1st cycle (4th/5th year) or equivalent"
+df$Dad_quali[df$Dad_quali == "28"] <- "Basic Education 2nd Cycle (6th/7th/8th Year) or equivalent"
+df$Dad_quali[df$Dad_quali == "29"] <- "Technological specialization course"
+df$Dad_quali[df$Dad_quali == "30"] <- "Higher education—degree (1st cycle)"
+df$Dad_quali[df$Dad_quali == "31"] <- "Specialized higher studies course"
+df$Dad_quali[df$Dad_quali == "32"] <- "Professional higher technical course"
+df$Dad_quali[df$Dad_quali == "33"] <- "Higher Education—master’s degree (2nd cycle)"
+df$Dad_quali[df$Dad_quali == "34"] <- "Higher Education—doctorate (3rd cycle)"
 
-# filter out "District of Columbia"
-cv_states_today_scatter <- cv_states_today %>% filter(state!="District of Columbia")
+#gender
+df$Gender[df$Gender == "0"] <- "Female"
+df$Gender[df$Gender == "1"] <- "Male"
 
-p2_scatter <- cv_states_today_scatter %>% 
-  plot_ly(x = ~pop_density, y = ~deathsper100k,
-          type = 'scatter', mode = 'markers', color = ~state,
-          size = ~population, sizes = c(5, 70), marker = list(sizemode='diameter', opacity=0.5),
-          hoverinfo = 'text',
-          text = ~paste( paste(state, ":", sep=""), paste(" Cases per 100k: ", per100k, sep="") , paste(" Deaths per 100k: ",
-                        deathsper100k, sep=""), sep = "<br>")) %>%
-  layout(title = "Population-normalized COVID-19 deaths vs. population density",
-                  yaxis = list(title = "Deaths per 100k"), xaxis = list(title = "Population Density"),
-         hovermode = "compare")
+df$Nationality <- as.factor(df$Nationality)
+df$Program <- as.factor(df$Program)
+df$Prev_quali <- as.factor(df$Prev_quali)
+df$Mom_quali <- as.factor(df$Mom_quali)
+df$Dad_quali <- as.factor(df$Dad_quali)
+df$Gender <- as.factor(df$Gender)
+apply(df, 2, unique)
 
-plt_eda_new_cases <- ggplot(
-  cv_states, 
-  aes(x = date, y = new_cases, colour = state)
-) +
-  geom_line() +
-  theme_minimal()
-
-plt_eda_new_deaths <- ggplot(
-  cv_states, 
-  aes(x = date, y = new_deaths, colour = state)
-) +
-  geom_line() +
-  theme_minimal()
 ```
 
-<br>
+# Description
 
-## Third step {.tabset}
+This paper examines the topic of injustice faced by university students and seeks to determine whether certain social, demographic, and macroeconomic aspects might predict a student's decision to drop out, continue enrolled, or graduate. The data for this study came mostly from a Kaggle dataset and the World Bank Gender Data Portal API. Realinho et al. (2022) constructed the Kaggle dataset, which contained academic, socioeconomic, and macroeconomic data from Portugal for students enrolled between 2008 and 2019. Based on the nationality of each student in the dataset, the World Bank data was utilised to calculate 2019 life expectancy numbers. These datasets were then combined, cleaned, and wrangled, with extra columns removed and numeric encoding restored. 
 
-Create tabs to display each figure
+Data exploration entailed investigating all variable distributions, categorical variable frequencies, and numerical variable summary statistics. To create predictions, three machine learning models (Gradient Boosting, Random Forest, and XGBOOST) were employed, and their accuracy, misclassification error, and mean squared error (MSE) were calculated. The Gradient Boosting model fared the best, according to the results. The XGBOOST model performed the worst in terms of accuracy and misclassification error. Overall, we determined that certain socioeconomic, demographic, and macroeconomic indicators can predict a student's result of dropping out, remaining enrolled, or graduating with 60% accuracy; however, further modelling and research are required to better forecast these outcomes.
 
-### Figure 1
+# Visualizations
 
-```{r p1}
-p1_scatter
+## Visualization 1
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+df$Gender <- as.factor(df$Gender)
+df_counts <- df %>% group_by(Age, Gender) %>% count()
+
+plot_ly(
+  df_counts,
+  x = ~ Age,
+  y = ~ n,
+  color = ~ Gender,
+  size = ~ n,
+  type = "scatter",
+  sizes = c(5, 1000),
+  marker = list(sizemode = "area", opacity = .8)
+) %>% 
+  layout(title="Figure 1: Number of Students by Age and Gender", xaxis= list(title="Age"), yaxis=list(title="Count"))
 ```
 
-### Figure 2
+This visualization shows the distribution of the ages of students according to their gender. We see that on an average, across the ages, the number of female students is more than the number of male students.
 
-```{r p2}
-p2_scatter
+## Visualization 2
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+df_counts <- df %>% group_by(Program) %>% count()
+
+plot <- ggplot(df_counts, aes(x = Program, y = n)) +
+  geom_bar(stat = "identity", fill = "#4C78A8") +
+  labs(title = "Figure 2: Number of Students by Program", x = "Program", y = "Count") +
+  theme_minimal() + coord_flip()
+
+plotly_plot <- ggplotly(plot)
+plotly_plot 
 ```
 
-### Figure 3
+This visualization shows the distribution of students by program. There are a total of 17 programs of study among all observations. Biofuel Production Technologies has the least number of observations (only 12) and Nursing has the most number of observations (766).
 
-```{r p3}
-ggplotly(plt_eda_new_cases)
+## Visualization 3
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+df_counts <- df %>% group_by(Program, Target) %>% count()
+
+plot_ly(
+  df_counts,
+  x = ~ Program,
+  y = ~ n,
+  color = ~ Target,
+  size = ~ n,
+  type = "scatter",
+  sizes = c(5, 1000),
+  marker = list(sizemode = "area", opacity = .8)
+) %>% 
+  layout(title="Figure 3: Number of Students by Program and Target value", xaxis= list(title="Program"), yaxis=list(title="Count"))
 ```
 
-### Figure 4
+This visualization shows the number of students by program that dropped out, graduated, or are still enrolled in the program. We see that Nursing (548) has the highest number of graduates, and Biofuel Production Technologies (1) has the least. Management (evening attendance) has the highest number of dropouts (136) and Biofuel Production Technologies has the least (8). Management has the highest number of students that are still enrolled (108) and Biofuel Production Technologies has the least (3).
 
-```{r p4}
-ggplotly(plt_eda_new_deaths)
-```
+# PDF Report and Presentation
 
-## {-}
+Here is a link to the PDF report.
+
+[Download PDF](../finalproj.html){.btn .btn-primary}
+
+Here is a link to the presentation. The passcode to access it is hiGgP&.1wV
+
+[Go to Presentation](https://utoronto.zoom.us/rec/share/vbQtLswy85lduDWLlQXkSVpEUJsAcoWu2oU91ZFfNDCkOyRj1hAl09EH0R2clMeQ.kG9nH4zbpnshlyDg?startTime=1682736353000){.btn .btn-primary}

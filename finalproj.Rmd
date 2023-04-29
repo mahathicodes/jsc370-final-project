@@ -1,0 +1,741 @@
+---
+title: "Predicting Student Dropouts"
+author: "Mahathi Gandhamaneni"
+date: "March 13th, 2023"
+output:
+  pdf_document: default
+  tufte::tufte_html:
+    css: style.css
+  html_document: 
+    theme: spacelab
+link-citations: yes
+---
+
+# Introduction 
+
+In recent times, there has been a spotlight on the inequity that students face during university - whether that be during the admissions process, or throughout the rest of their studies once they are in. 
+
+In particular, the opportunities that seem to be available to everyone regardless of who they are or where they are from, may just be a mirage. Through taking a look at the news and articles, it appears that not just academics, but demographic, socioeconomic, and macroeconomic factors appear to have an effect on students in university. For example, students coming from certain backgrounds may not have financial, academic, or even emotional support being provided by their families.
+  
+Sometimes, these factors may lead to a student dropping out or they may lead to a student graduating with honours. What we want to investigate here is whether we can predict what outcome a student will face based on certain socioeconomic, demographic, and macroeconomic factors.
+Specifically, the question we want to answer in this project is as follows: **Can we predict whether a student will drop out of an undergraduate degree program or not, based on factors such as gender, unemployment rates, nationality, 2019 life expectancy (based on nationality), previous qualification, mother’s and father’s qualification, and program of study?**
+
+# Methods
+
+## Data Collection
+
+The data was primarily acquired from two sources: a Kaggle dataset entitled “Predict students’ dropout and academic success” (https://www.kaggle.com/datasets/thedevastator/higher-education-predictors-of-student-retention?datasetId=2780494&searchQuery=cleaning) which I will henceforth refer to as the “Student Data”, and 2019 life expectancy data extracted using the World Bank Gender Data Portal API (which I will refer to as the “World Bank Data”). 
+
+The main data is actually derived from a dataset created by Realinho et al (2022) for their paper entitled Predicting Student Dropout and Academic Success (Realinho et al). This paper is where I was able to find all the background information about the dataset for the purposes of understanding it, and using it to perform data analysis. The dataset was developed at the Polytechnic Institute of Portalegre and was used to build machine learning models to predict academic performance. The data in the dataset was derived from several sources of academic (student), socioeconomic, and macroeconomic data in Portugal (Realinho et al can be consulted for more detail into the sources). It refers to student records enrolled between the academic years of 2008 to 2019. 
+Almost all the categorical variables in the dataset are numerically encoded (the numeric encoding values are found at https://www.mdpi.com/2306-5729/7/11/146). In order to simplify data exploration and analysis, as well as enhance readability, we have decided to replace the numeric encoding with the real values.
+The main data does not have a reference to the year from which an observation was extracted, so it is very difficult to figure out what year of life expectancy data to associate with which record. In order to simplify the process (even though it may be at the expense of accuracy), 2019 life expectancy figures were used for every observation respective to their nationality.
+
+Within the World Bank API, every country is assigned a three letter ISO code which allows us to concatenate the appropriate URL for each country so that we can extract the life expectancy data for 2019. For any given country, the API link for the average life expectancy in 2019 is as follows: "http://api.worldbank.org/v2/country/[ISO COUNTRY CODE]/indicator/SP.DYN.LE00.IN?date=2019", where [ISO COUNTRY CODE] is a standardized code system followed worldwide.
+The main data exhibits that the student demographic within the data was no more than 21 nationalities. Looking at these 21 values, we can find the ISO code for each one of the countries, and iterate through them all, extracting the appropriate figures and storing them in a dataframe.
+After this process of data extraction, the main data and the world bank data were then merged through a left join on the nationalities, so that each observation in the final dataframe had a 2019 life expectancy value associated with it based on the student’s nationality.
+
+
+## Data Cleaning & Wrangling
+
+Since the main data was already used in analysis and modelling in a prior study, it was already cleaned and prepared well. There were no missing values or any other immediate issues that needed to be addressed before the data could be used. However, there were quite a few columns in the main data that we will not be using in our analysis that needed to be dropped from the data frame.
+
+In fact, of the 35 variables in the main dataset, the only variables selected were:
+
+Course: The course taken by the student. (Categorical), Previous qualification: The qualification obtained by the student before enrolling in higher education. (Categorical), Nationality: The nationality of the student. (Categorical), Mother's qualification: The qualification of the student's mother. (Categorical), Father's qualification: The qualification of the student's father. (Categorical), Gender: The gender of the student. (Categorical), Age at enrollment: The age of the student at the time of enrollment. (Numerical), Unemployment rate: Unemployment rate at the time the data was recorded. (Numerical), Target: The status of the student (enrolled, dropped out, or graduated) (Categorical)
+
+Some of the variables within the main data were also renamed to minimize length and to also increase readability. 
+Similarly, when it comes to the life expectancy data frame that we extracted, there were columns that were unnecessary and that needed to be dropped. Specifically, we were interested in only two columns - the ISO country code (which served as a unique identifier until an ID column was added) and the actual life expectancy value column. An ID column was added to this dataframe in order to match the nationality encoding in the main dataset to make merging the two easier. After the two dataframes were merged, the ISO country code column was removed, thus leaving only the life expectancy value that we need.
+	
+## Data Exploration
+
+Now that we have our cleaned and wrangled data, we can begin to explore key variables and associations. 
+
+In total, the dataset has 4424 observations and 10 variables. In order to explore the data, we decided to take a look at the distributions of all the variables, frequencies of categorical variables, and summary statistics for numerical variables. Specifically, we explored the variables Course, Previous qualification, Mother’s qualification, and Father’s qualification through bar plots and frequency tables. We explored the numerical variables Age, Unemployment rate, and Life expectancy through histograms and summary statistics tables. As for the variables gender and target, we used frequency tables to examine these since they have comparatively fewer categories as compared to the other variables in the data set and their composition can be understood through looking at the frequency of their values.
+
+# Preliminary Results
+
+
+```{r, include=FALSE}
+library(httr)
+library(tidyverse)
+library(xml2)
+library(stringr)
+library(knitr)
+library(vtable)
+```
+
+
+```{r, include=FALSE}
+
+life_expectancy <- data.frame()
+
+# List of countries to scrape
+countries <- c("PRT", "DEU", "ESP", "ITA", "NLD", "GBR", "LTU", "AGO", "CPV", "GIN", "MOZ", "STP", "TUR", "BRA", "ROU", "MDA", "MEX", "UKR", "RUS", "CUB", "COL")
+
+for (i in 1:length(countries)) {
+  url <- paste0("http://api.worldbank.org/v2/country/", tolower(gsub(" ", "%20", countries[i])), "/indicator/SP.DYN.LE00.IN?date=2019")
+
+restaurant_license_xml = as_list(read_xml(url))
+
+xml_df = tibble::as_tibble(restaurant_license_xml) %>%
+  unnest_wider(data)
+
+lp_df = xml_df %>%
+  unnest(cols = names(.)) %>%
+  unnest(cols = names(.)) %>%
+  # convert data type
+  readr::type_convert()
+
+# lp_df <- lp_df %>% unnest_wider(data_id)
+
+life_expectancy <- bind_rows(life_expectancy, lp_df)
+
+}
+
+life_expectancy <- life_expectancy %>% select(countryiso3code, value)
+life_expectancy <- cbind(Nacionality = 1:nrow(life_expectancy), life_expectancy)
+
+df <- read.csv("dataset.csv")
+
+# Left join
+df <- merge(x=df,y=life_expectancy, 
+             by="Nacionality", all.x=TRUE)
+```
+
+
+```{r, include=FALSE}
+dim(df)
+head(df)
+tail(df)
+str(df)
+```
+
+```{r, include=FALSE}
+df <- df %>% select(Nacionality, Course, Previous.qualification, Mother.s.qualification, Father.s.qualification, Gender, Age.at.enrollment, Unemployment.rate, Target, value)
+df <- rename(df, Nationality = Nacionality)
+df <- rename(df, Prev_quali = Previous.qualification)
+df <-rename(df, Mom_quali = Mother.s.qualification)
+df <-rename(df, Dad_quali = Father.s.qualification)
+df <-rename(df, Age = Age.at.enrollment)
+df <-rename(df, Unemp_rate = Unemployment.rate)
+df <-rename(df, Life_expectancy = value)
+df <-rename(df, Program = Course)
+
+summary(df)
+apply(df, 2, unique)
+```
+
+```{r, include=FALSE}
+# undoing numerical encoding
+
+# nationality
+df$Nationality[df$Nationality == "1"] <- "Portuguese"
+df$Nationality[df$Nationality == "2"] <- "German"
+df$Nationality[df$Nationality == "3"] <- "Spanish"
+df$Nationality[df$Nationality == "4"] <- "Italian"
+df$Nationality[df$Nationality == "5"] <- "Dutch"
+df$Nationality[df$Nationality == "6"] <- "English"
+df$Nationality[df$Nationality == "7"] <- "Lithuanian"
+df$Nationality[df$Nationality == "8"] <- "Angolan"
+df$Nationality[df$Nationality == "9"] <- "Cape Verdean"
+df$Nationality[df$Nationality == "10"] <- "Guinean"
+df$Nationality[df$Nationality == "11"] <- "Mozambican"
+df$Nationality[df$Nationality == "12"] <- "Santomean"
+df$Nationality[df$Nationality == "13"] <- "Turkish"
+df$Nationality[df$Nationality == "14"] <- "Brazilian"
+df$Nationality[df$Nationality == "15"] <- "Romanian"
+df$Nationality[df$Nationality == "16"] <- "Moldova (Republic of)"
+df$Nationality[df$Nationality == "17"] <- "Mexican"
+df$Nationality[df$Nationality == "18"] <- "Ukrainian"
+df$Nationality[df$Nationality == "19"] <- "Russian"
+df$Nationality[df$Nationality == "20"] <- "Cuban"
+df$Nationality[df$Nationality == "21"] <- "Colombian"
+
+#course
+df$Program[df$Program == "1"] <- "Biofuel Production Technologies"
+df$Program[df$Program == "2"] <- "Animation and Multimedia Design"
+df$Program[df$Program == "3"] <- "Social Service (evening attendance)"
+df$Program[df$Program == "4"] <- "Agronomy"
+df$Program[df$Program == "5"] <- "Communication Design"
+df$Program[df$Program == "6"] <- "Veterinary Nursing"
+df$Program[df$Program == "7"] <- "Informatics Engineering"
+df$Program[df$Program == "8"] <- "Equiniculture"
+df$Program[df$Program == "9"] <- "Management"
+df$Program[df$Program == "10"] <- "Social Service"
+df$Program[df$Program == "11"] <- "Tourism"
+df$Program[df$Program == "12"] <- "Nursing"
+df$Program[df$Program == "13"] <- "Oral Hygiene"
+df$Program[df$Program == "14"] <- "Advertising and Marketing Management"
+df$Program[df$Program == "15"] <- "Journalism and Communication"
+df$Program[df$Program == "16"] <- "Basic Education"
+df$Program[df$Program == "17"] <- "Management (evening attendance)"
+
+#prev quali
+df$Prev_quali[df$Prev_quali == "1"] <- "Secondary education"
+df$Prev_quali[df$Prev_quali == "2"] <- "Higher education—bachelor’s degree"
+df$Prev_quali[df$Prev_quali == "3"] <- "Higher education—degree"
+df$Prev_quali[df$Prev_quali == "4"] <- "Higher education—master’s degree"
+df$Prev_quali[df$Prev_quali == "5"] <- "Higher education—doctorate"
+df$Prev_quali[df$Prev_quali == "6"] <- "Frequency of higher education"
+df$Prev_quali[df$Prev_quali == "7"] <- "12th year of schooling—not completed"
+df$Prev_quali[df$Prev_quali == "8"] <- "11th year of schooling—not completed"
+df$Prev_quali[df$Prev_quali == "9"] <- "Other—11th year of schooling"
+df$Prev_quali[df$Prev_quali == "10"] <- "10th year of schooling"
+df$Prev_quali[df$Prev_quali == "11"] <- "10th year of schooling—not completed"
+df$Prev_quali[df$Prev_quali == "12"] <- "Basic education 3rd cycle (9th/10th/11th year) or equivalent"
+df$Prev_quali[df$Prev_quali == "13"] <- "Basic education 2nd cycle (6th/7th/8th year) or equivalent"
+df$Prev_quali[df$Prev_quali == "14"] <- "Technological specialization course"
+df$Prev_quali[df$Prev_quali == "15"] <- "Higher education—degree (1st cycle)"
+df$Prev_quali[df$Prev_quali == "16"] <- "Professional higher technical course"
+df$Prev_quali[df$Prev_quali == "17"] <- "Higher education—master’s degree (2nd cycle)"
+
+#mothers quali
+df$Mom_quali[df$Mom_quali == "1"] <- "Secondary Education—12th Year of Schooling or Equivalent"
+df$Mom_quali[df$Mom_quali == "2"] <- "Higher Education—bachelor’s degree"
+df$Mom_quali[df$Mom_quali == "3"] <- "Higher Education—degree"
+df$Mom_quali[df$Mom_quali == "4"] <- "Higher Education—master’s degree"
+df$Mom_quali[df$Mom_quali == "5"] <- "Higher Education—doctorate"
+df$Mom_quali[df$Mom_quali == "6"] <- "Frequency of Higher Education"
+df$Mom_quali[df$Mom_quali == "7"] <- "12th Year of Schooling—not completed"
+df$Mom_quali[df$Mom_quali == "8"] <- "11th Year of Schooling—not completed"
+df$Mom_quali[df$Mom_quali == "9"] <- "7th Year (Old)"
+df$Mom_quali[df$Mom_quali == "10"] <- "Other—11th Year of Schooling"
+df$Mom_quali[df$Mom_quali == "11"] <- "2nd year complementary high school course"
+df$Mom_quali[df$Mom_quali == "12"] <- "10th Year of Schooling"
+df$Mom_quali[df$Mom_quali == "13"] <- "General commerce course"
+df$Mom_quali[df$Mom_quali == "14"] <- "Basic Education 3rd Cycle (9th/10th/11th Year) or Equivalent"
+df$Mom_quali[df$Mom_quali == "15"] <- "Complementary High School Course"
+df$Mom_quali[df$Mom_quali == "16"] <- "Technical-professional course"
+df$Mom_quali[df$Mom_quali == "17"] <- "Complementary High School Course—not concluded"
+df$Mom_quali[df$Mom_quali == "18"] <- "7th year of schooling"
+df$Mom_quali[df$Mom_quali == "19"] <- "2nd cycle of the general high school course"
+df$Mom_quali[df$Mom_quali == "20"] <- "9th Year of Schooling—not completed"
+df$Mom_quali[df$Mom_quali == "21"] <- "8th year of schooling"
+df$Mom_quali[df$Mom_quali == "22"] <- "General Course of Administration and Commerce"
+df$Mom_quali[df$Mom_quali == "23"] <- "Supplementary Accounting and Administration"
+df$Mom_quali[df$Mom_quali == "24"] <- "Unknown"
+df$Mom_quali[df$Mom_quali == "25"] <- "Cannot read or write"
+df$Mom_quali[df$Mom_quali == "26"] <- "Can read without having a 4th year of schooling"
+df$Mom_quali[df$Mom_quali == "27"] <- "Basic education 1st cycle (4th/5th year) or equivalent"
+df$Mom_quali[df$Mom_quali == "28"] <- "Basic Education 2nd Cycle (6th/7th/8th Year) or equivalent"
+df$Mom_quali[df$Mom_quali == "29"] <- "Technological specialization course"
+df$Mom_quali[df$Mom_quali == "30"] <- "Higher education—degree (1st cycle)"
+df$Mom_quali[df$Mom_quali == "31"] <- "Specialized higher studies course"
+df$Mom_quali[df$Mom_quali == "32"] <- "Professional higher technical course"
+df$Mom_quali[df$Mom_quali == "33"] <- "Higher Education—master’s degree (2nd cycle)"
+df$Mom_quali[df$Mom_quali == "34"] <- "Higher Education—doctorate (3rd cycle)"
+
+#fathers quali
+df$Dad_quali[df$Dad_quali == "1"] <- "Secondary Education—12th Year of Schooling or Equivalent"
+df$Dad_quali[df$Dad_quali == "2"] <- "Higher Education—bachelor’s degree"
+df$Dad_quali[df$Dad_quali == "3"] <- "Higher Education—degree"
+df$Dad_quali[df$Dad_quali == "4"] <- "Higher Education—master’s degree"
+df$Dad_quali[df$Dad_quali == "5"] <- "Higher Education—doctorate"
+df$Dad_quali[df$Dad_quali == "6"] <- "Frequency of Higher Education"
+df$Dad_quali[df$Dad_quali == "7"] <- "12th Year of Schooling—not completed"
+df$Dad_quali[df$Dad_quali == "8"] <- "11th Year of Schooling—not completed"
+df$Dad_quali[df$Dad_quali == "9"] <- "7th Year (Old)"
+df$Dad_quali[df$Dad_quali == "10"] <- "Other—11th Year of Schooling"
+df$Dad_quali[df$Dad_quali == "11"] <- "2nd year complementary high school course"
+df$Dad_quali[df$Dad_quali == "12"] <- "10th Year of Schooling"
+df$Dad_quali[df$Dad_quali == "13"] <- "General commerce course"
+df$Dad_quali[df$Dad_quali == "14"] <- "Basic Education 3rd Cycle (9th/10th/11th Year) or Equivalent"
+df$Dad_quali[df$Dad_quali == "15"] <- "Complementary High School Course"
+df$Dad_quali[df$Dad_quali == "16"] <- "Technical-professional course"
+df$Dad_quali[df$Dad_quali == "17"] <- "Complementary High School Course—not concluded"
+df$Dad_quali[df$Dad_quali == "18"] <- "7th year of schooling"
+df$Dad_quali[df$Dad_quali == "19"] <- "2nd cycle of the general high school course"
+df$Dad_quali[df$Dad_quali == "20"] <- "9th Year of Schooling—not completed"
+df$Dad_quali[df$Dad_quali == "21"] <- "8th year of schooling"
+df$Dad_quali[df$Dad_quali == "22"] <- "General Course of Administration and Commerce"
+df$Dad_quali[df$Dad_quali == "23"] <- "Supplementary Accounting and Administration"
+df$Dad_quali[df$Dad_quali == "24"] <- "Unknown"
+df$Dad_quali[df$Dad_quali == "25"] <- "Cannot read or write"
+df$Dad_quali[df$Dad_quali == "26"] <- "Can read without having a 4th year of schooling"
+df$Dad_quali[df$Dad_quali == "27"] <- "Basic education 1st cycle (4th/5th year) or equivalent"
+df$Dad_quali[df$Dad_quali == "28"] <- "Basic Education 2nd Cycle (6th/7th/8th Year) or equivalent"
+df$Dad_quali[df$Dad_quali == "29"] <- "Technological specialization course"
+df$Dad_quali[df$Dad_quali == "30"] <- "Higher education—degree (1st cycle)"
+df$Dad_quali[df$Dad_quali == "31"] <- "Specialized higher studies course"
+df$Dad_quali[df$Dad_quali == "32"] <- "Professional higher technical course"
+df$Dad_quali[df$Dad_quali == "33"] <- "Higher Education—master’s degree (2nd cycle)"
+df$Dad_quali[df$Dad_quali == "34"] <- "Higher Education—doctorate (3rd cycle)"
+
+#gender
+df$Gender[df$Gender == "0"] <- "Female"
+df$Gender[df$Gender == "1"] <- "Male"
+
+df$Nationality <- as.factor(df$Nationality)
+df$Program <- as.factor(df$Program)
+df$Prev_quali <- as.factor(df$Prev_quali)
+df$Mom_quali <- as.factor(df$Mom_quali)
+df$Dad_quali <- as.factor(df$Dad_quali)
+df$Gender <- as.factor(df$Gender)
+apply(df, 2, unique)
+
+```
+
+
+### Age
+
+```{r, echo=FALSE, fig.align='center'}
+# Numerical Variables
+
+#Age
+
+ggplot(df, aes(Age)) +
+  geom_histogram(bins = 34, color = "#000000", fill = "#0099F8") + theme_minimal()+
+  labs(y="Frequency", title="Figure 1: Distribution of Age")
+
+df_age <- df %>% select(Age)
+st(df_age,
+   summ = list(
+     c('notNA(x)','mean(x)','median(x)','min(x)', 'pctile(x)[25]', 'pctile(x)[75]', 'max(x)')
+   ),
+   summ.names = list(
+     c("N", "Mean", "Median", "Min", "25%", "75%", "Max")),
+   title = "Table 1: Summary Statistics - Age")
+```
+
+The range of ages in the data lies between 17 and 70. Taking a look at the summary statistics and distribution of values, we see that this variable is heavily right skewed. It appears that 50% of the observations lie between 17-20 years old, with the highest frequency being at 18 years old. This is nothing unusual, since most students enroll in undergraduate degrees between these ages. The oldest observation belonging to a 70 year old is not unusual either since many adults choose to attend universities later on in their lives.
+
+### Nationality
+
+```{r, echo=FALSE, message=FALSE, fig.align='center'}
+# Categorical Variables
+library(plyr)
+library(kableExtra)
+
+#Nationality
+knitr::kable(count(df, 'Nationality'), col.names = c("Nationality Number", "Frequency"), align = "c", caption = "Table 2: Nationality Frequency Table") %>%
+  kable_material(c("striped", "hover")) %>% 
+ scroll_box(width = "500px", height = "1000px") %>% kable_styling(position = "center")
+
+ggplot(df, aes(Nationality)) +
+  geom_bar(color = "#000000", fill = "#0099F8") + theme_minimal()+
+  labs(y="Frequency", title="Figure 2: Distribution of Nationalities") + coord_flip()
+
+```
+
+There are a total of 21 nationalities amongst all observations in the data. Looking at the distribution of nationalities in the data, we see that almost all the observations belong to students of Portuguese descent. Since this data was collected from Portuguese institutions, this is expected. There may be other reasons for such a low concentration of observations with other nationalities such as incomplete observations, etc. It is also important to take into account that this may perhaps lead to non-generalizability of results.
+
+
+### Course/Program
+
+```{r, echo=FALSE, fig.align='center'}
+#Course
+knitr::kable(count(df, 'Program'), col.names = c("Program Number", "Frequency"), align = "c", caption = "Table 3: Course/Program Frequency Table") %>%
+  kable_material(c("striped", "hover")) %>% 
+ scroll_box(width = "500px", height = "1000px") %>% kable_styling(position = "center")
+
+ggplot(df, aes(Program)) +
+  geom_bar(color = "#000000", fill = "#0099F8") + theme_minimal()+
+  labs(y="Frequency", title="Figure 3: Distribution of Programs") + coord_flip()
+```
+
+There are a total of 17 programs of study amongst all observations. The observations seem to be mostly evenly distributed among all programs, except Biofuel Production Technologies has the least number of observations (only 12) and Nursing has the most number of observations (766). A detailed interactive distribution with the number of observations per program can be found on the homepage of the final project website (Figure 2).
+
+
+### Previous Qualification
+
+```{r, echo=FALSE, fig.align='center'}
+#Previous qualification
+knitr::kable(count(df, 'Prev_quali'), col.names = c("Previous Qualification Number", "Frequency"), align = "c", caption = "Table 4: Previous Qualification Frequency Table") %>%
+  kable_material(c("striped", "hover")) %>% 
+ scroll_box(width = "500px", height = "1000px") %>% kable_styling(position = "center")
+
+ggplot(df, aes(Prev_quali)) +
+  geom_bar(color = "#000000", fill = "#0099F8") + theme_minimal()+
+  labs(x = "Previous Qualification", y="Frequency", title="Figure 4: Distribution of Previous Qualifications")
+```
+
+There are 17 categories of previous qualifications listed in the dataset. The most frequent observation is Secondary Education. This is also expected since a large majority of students come to universities to pursue undergraduate degrees after completing high school/12th grade. Compared to Secondary Education, the observations in the rest of the categories are minimal.
+
+
+### Mother's Qualification
+
+```{r, echo=FALSE, fig.align='center'}
+#Mother's qualification
+knitr::kable(count(df, 'Mom_quali'), col.names = c("Mother's Qualification Number", "Frequency"), align = "c", caption = "Table 5: Mother's Qualification Frequency Table") %>%
+  kable_material(c("striped", "hover")) %>% 
+ scroll_box(width = "500px", height = "1000px") %>% kable_styling(position = "center")
+
+ggplot(df, aes(Mom_quali)) +
+  geom_bar(color = "#000000", fill = "#0099F8") + theme_minimal()+ 
+  labs(x = "Mother's Qualification", y="Frequency", title="Figure 5: Distribution of Mother's Qualifications") + coord_flip()
+```
+
+For this variable, there are 34 defined categories in the documentation, but only 29 categories were found among all observations. Since all of the categories in this variable are numbered from 1-29, this doesn’t indicate an error in the data. It may perhaps just be because both mother’s and father’s qualification values were defined in one table since both these variables have the first 29 values in common and the last five are additional in the latter variable. 
+There appear to be three categories that these observations are primarily distributed into. Ordered from highest frequency to lowest, these are Secondary Education—12th Year of Schooling or Equivalent, General Course of Administration and Commerce, and General commerce course. It appears that a large number of students in this dataset have mothers who took some form of commerce course. This may indicate a trend or may have some correlation with admission or dropout rates that may need to be further explored.
+
+
+### Father's Qualification
+
+```{r, echo=FALSE, fig.align='center'}
+#Father's qualification
+knitr::kable(count(df, 'Dad_quali'), col.names = c("Father's Qualification Number", "Frequency"), align = "c", caption = "Table 6: Father's Qualification Frequency Table") %>%
+  kable_material(c("striped", "hover")) %>% 
+ scroll_box(width = "500px", height = "1000px") %>% kable_styling(position = "center")
+
+ggplot(df, aes(Dad_quali)) +
+  geom_bar(color = "#000000", fill = "#0099F8") + theme_minimal()+
+  labs(x = "Father's Qualification", y="Frequency", title="Figure 6: Distribution of Father's Qualifications") + coord_flip()
+```
+
+For this variable, there are 34 defined categories in the documentation, and all of them were found in the dataset. Similar to the mother’s qualification variable, the observations in the dataset seem to be primarily distributed into three categories - Basic education 1st cycle (4th/5th year) or equivalent, Basic Education 3rd Cycle (9th/10th/11th Year) or Equivalent, Secondary Education—12th Year of Schooling or Equivalent. This may indicate that a large number of students may be first generation university students. 
+
+
+For both the Mother’s Qualification and Father’s Qualification variables, there is a certain category called “Unknown” in which a small fraction of observations lie (approximately 120 observations). This is a very small number of observations as compared to the total number of observations in the dataset and can be removed. However, this variable may indicate other information, such as the student not knowing/having ever met this parent and thus not knowing their qualifications. Due to this, we chose to leave all observations with this value in the dataset.
+
+
+### Gender
+
+```{r, echo=FALSE, fig.align='center'}
+#Gender
+knitr::kable(count(df, 'Gender'), col.names = c("Gender", "Frequency"), align = "c", caption = "Table 7: Gender Frequency Table") %>%
+  kable_material(c("striped", "hover"))
+```
+
+Looking at the frequency table, we see that there is a greater number of observations that belong to students who are female as opposed to those that are male. In fact, there are almost twice the number of females as opposed to males in this dataset. A similar trend is further noticed in the interactive visualization Figure 1 on the homepage of the website. We see that between the ages of 17-20, the number of female students is far greater than the number of male students. This may be perhaps due to a lack of complete data collected from male students, or some other errors at the time of collection. This may skew results in an undesirable manner; the full effect of this needs to be investigated further.
+
+
+### Unemployment Rate
+
+```{r, echo=FALSE, fig.align='center'}
+#Unemployment Rates
+
+ggplot(df, aes(Unemp_rate)) +
+  geom_histogram(bins = 15, color = "#000000", fill = "#0099F8") + theme_minimal()+
+  labs(x = "Unemployment Rate", y="Frequency", title="Figure 7: Distribution of Unemployment Rates")
+
+df_unemp <- df %>% select(Unemp_rate)
+st(df_unemp,
+   summ = list(
+     c('notNA(x)','mean(x)','median(x)','min(x)', 'pctile(x)[25]', 'pctile(x)[75]', 'max(x)')
+   ),
+   summ.names = list(
+     c("N", "Mean", "Median", "Min", "25%", "75%", "Max")),
+   title = "Table 8: Summary Statistics - Unemployment Rate")
+```
+
+The summary statistics and histogram tell us that the unemployment rates vary from 7.6% to 16.2% over the years, which is in accordance with secondary sources of historical data which looked at rates between 2008 and 2019. There seems to be a high concentration of values around the 11% mark, which may indicate that a large number of observations may have been from a particular year/time where the unemployment rate hovered around this mark. This may potentially skew results.
+
+
+### Target
+
+```{r, echo=FALSE, fig.align='center'}
+# Target
+target_df <- count(df, 'Target')
+ggplot(target_df, aes(x="", y=freq, fill=Target)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  scale_fill_brewer(palette="Blues") + 
+  labs(title = "Figure 8: Distribution of students who have graduated vs dropped out vs enrolled")
+```
+
+The Target variable consists of three categories - “Dropped”, “Enrolled”, and Graduate”. Taking a look at this pie chart, we see that around half the students in this dataset graduated from university, one third of the students dropped out, and one sixth are still enrolled in university at the time of data collection (these are perhaps students who enrolled university in the later years of data collection (ex: 2018, 2019).
+
+
+### Life Expectancy
+
+```{r, echo=FALSE, fig.align='center'}
+#Life Expectancy (in years)
+
+ggplot(df, aes(Life_expectancy)) +
+  geom_histogram(bins = 15, color = "#000000", fill = "#0099F8") + theme_minimal()+
+  labs(x = "Life Expectancy", y="Frequency", title="Figure 9: Distribution of Life Expectancy (in years)")
+
+df_life <- df %>% select(Life_expectancy)
+st(df_life,
+   summ = list(
+     c('notNA(x)','mean(x)','median(x)','min(x)', 'pctile(x)[25]', 'pctile(x)[75]', 'max(x)')
+   ),
+   summ.names = list(
+     c("N", "Mean", "Median", "Min", "25%", "75%", "Max")),
+   title = "Table 9: Summary Statistics - Life Expectancy")
+```
+
+Finally, taking a look at the summary statistics and distribution of the life expectancy variable, we see that almost all the observations are at around the 81 (years) mark. This follows from the fact that a majority of observations are from students of Portuguese nationality - since we assigned these values based on nationality, it was bound that the distribution would be skewed as such. Due to this, it is unclear how useful this variable will be in prediction.
+
+
+```{r, include=FALSE}
+df$Target <- as.factor(df$Target)
+initial_model <- glm(formula = Target ~ Nationality + Program + Prev_quali + Mom_quali + Dad_quali + Gender + Age + Unemp_rate + Life_expectancy, data = df, family = binomial)
+summary(initial_model)
+```
+
+## Initial Logistic Regression Model
+
+```{r, include=FALSE}
+library(modelsummary)
+modelsummary(list("Initial Logistic Regression Model" = initial_model))
+```
+
+Fitting an initial naive logistic regression model in order to explore the formulated question further, we noticed that some variables seem to be having significant effects on the response variable whereas others seem to not have a significant effect at all. The RMSE value calculated is also very low, implying that the model is not very capable of prediction in its current form. In order to decipher which factors have the most impact on dropout rates and will help us build a model that is capable of accurate predictions, we can use stepwise logistic regression.
+
+Another approach could be the use of other machine learning models. We can fit other models (such as xgboost, random forests, etc.) that help to better describe the data and make more accurate predictions. This approach must be explored further in this project.
+
+
+# Description of Modeling
+
+Building upon our preliminary findings, we decided to make use of three machine learning models in order to best answer our question. These models are Gradient Boosting, Random Forest, and XGBOOST, which we evaluated on accuracy, MSE, and misclassification error.
+These models were chosen as they are popular machine learning models that are especially used for classification tasks. Before these models were trained, the data was split up into training and testing data, where 80% of the data was devoted to training the model, and 20% of the data was devoted to testing.
+
+After tuning the hyperparameters, the gradient boosting model that gave us the best results was constructed with 10-fold cross validation, 5000 trees, shrinkage rate of 0.001, and interaction depth of 2. The optimal random forest model was selected with a complexity parameter of (INSERT). 
+In order to tune the hyperparameters for the XGBOOST model, we performed a grid search with 10-fold cross validation, maximum tree depths of 1,3,5,7,9, and 11, 50 to 500 trees, and learning rates of 0.5, .3, .1, .01, .001, and 0.0001. The final values used for the model were 500 trees, maximum tree depth of 3, learning rate of 0.01, and default gamma value of 0.
+
+These models were then used to generate predictions using the reserved test dataset, and were evaluated on three main metrics - accuracy, misclassification error, MSE.
+
+```{r, include=FALSE}
+df$Target <- as.double(df$Target)
+# splitting the data
+set.seed(370)
+train <- sample(1:nrow(df), floor(nrow(df) * 0.7))
+test <- setdiff(1:nrow(df), train)
+
+# dim(train_data)
+# dim(test_data)
+```
+
+```{r, include=FALSE}
+# gradient boosting
+library(gbm)
+library(caret)
+set.seed(2100)
+boost <- gbm(
+  Target ~ ., data = df[train, ],
+  distribution = "multinomial",
+  cv.folds = 10,
+  n.trees = 5000,
+  interaction.depth = 2,  # maximum depth of individual tree
+  shrinkage = .001,       # learning rate
+  class.stratify.cv = TRUE
+)
+
+set.seed(2100)
+boost_2a <- gbm(
+  Target ~ ., data = df[train, ],
+  distribution = "multinomial",
+  cv.folds = 10,
+  n.trees = 5000,
+  interaction.depth = 2,  # maximum depth of individual tree
+  shrinkage = .001,       # learning rate
+  class.stratify.cv = TRUE
+)
+# set.seed(2100)
+# boost_2b <- gbm(
+#   Target ~ ., data = df[train, ],
+#   distribution = "multinomial",
+#   cv.folds = 10,
+#   n.trees = 5000,
+#   interaction.depth = 1,  # maximum depth of individual tree
+#   shrinkage = .01,       # learning rate
+#   class.stratify.cv = TRUE
+# )
+# set.seed(2100)
+# boost_2c <- gbm(
+#   Target ~ ., data = df[train, ],
+#   distribution = "multinomial",
+#   cv.folds = 10,
+#   n.trees = 5000,
+#   interaction.depth = 2,  # maximum depth of individual tree
+#   shrinkage = .01,       # learning rate
+#   class.stratify.cv = TRUE
+# )
+
+# MSEs
+yhat_boost_2a <- predict(boost_2a, newdata = df[test, ],
+                        n.trees = 5000, type = "response")
+# yhat_boost_2b <- predict(boost_2b, newdata = df[test, ],
+#                         n.trees = 5000, type = "response")
+# yhat_boost_2c <- predict(boost_2c, newdata = df[test, ],
+#                         n.trees = 5000, type = "response")
+# data.frame(
+#   params = c(
+#     "0.001 shrinkage\n1 max tree depth",
+#     "0.001 shrinkage\n2 max tree depth",
+#     "0.01 shrinkage\n1 max tree depth",
+#     "0.01 shrinkage\n2 max tree depth"
+#   ),
+#   mses = c(
+#     mean((yhat_boost - df$Target[test])^2),
+#     mean((yhat_boost_2a - df$Target[test])^2),
+#     mean((yhat_boost_2b - df$Target[test])^2),
+#     mean((yhat_boost_2c - df$Target[test])^2)
+#   )
+# ) |>
+#   ggplot(aes(y = params, x = mses)) +
+#   theme_minimal() +
+#   geom_point(size = 1.5) +
+#   geom_segment(aes(xend = 0, yend = params), linetype = "dotted") +
+#   labs(x = "MSE", y = NULL)
+
+p.yhat_boost_2a <- apply(yhat_boost_2a, 1, which.max)
+mean((p.yhat_boost_2a - df$Target[test])^2)
+conf_matrix <- confusionMatrix(as.factor(p.yhat_boost_2a), as.factor(df[-train, "Target"]))
+misclass_error <- 1 - sum(diag(conf_matrix$table)) / sum(conf_matrix$table)
+```
+
+```{r, include=FALSE}
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+
+set.seed(2100)
+tree <- rpart(
+  Target ~ ., data = df[train, ],
+  method = "class", 
+  control = list(minsplits = 10, minbucket = 3, cp = 0, xval = 10)
+)
+# rpart.plot(tree)
+
+# plotcp(tree)
+cp_summary <- tree$cptable
+optimal_cp <- cp_summary[5, 1]
+tree_pruned <- prune(tree, cp = optimal_cp)
+
+pred <- predict(tree_pruned, df[-train, ], type = "class") # specify type as "class"
+conf_matrix <- confusionMatrix(pred, as.factor(df[-train, "Target"])) # select only Target column
+misclass_error <- 1 - sum(diag(conf_matrix$table)) / sum(conf_matrix$table)
+MSE_RF <- mean((as.numeric(pred) - as.numeric(df$Target[test]))^2)
+```
+
+```{r, include=FALSE}
+set.seed(2100)
+# we are going to tell caret package that we want to conduct a grid search w/ 10-CV
+train_control <- caret::trainControl(method = "cv", number = 10, search = "grid")
+# parameter grid 
+tune_grid <- expand.grid(
+  max_depth = c(1, 3, 5, 7, 9,11),   # max tree depth 
+                               # larger makes model more complex 
+                               # and potentially overfit
+  nrounds = 50 * (1:10),       # number of trees (iterations)
+  eta = c(0.5, .3, .1, .01, .001, 0.0001),  # learning rate (shrinkage)
+  # default values
+  gamma = 0,                   # minimum loss reduction required to make 
+                               # a further partition on a leaf node of the tree. 
+                               # The larger gamma is, the more conservative 
+                               # the algorithm will be.
+  colsample_bytree = .6,       # the fraction of columns to be sampled 
+                               # (borrowing from random forest)
+  subsample = 1,
+  min_child_weight = 1
+)
+
+xgb <- caret::train(
+  Target ~ .,       # caret expects factor for classification
+                         # if you use xgboost, it expects numeric values only
+  data = df[train, ], 
+  method = "xgbTree",    # caret calls xgboost in the backend
+                         # see https://topepo.github.io/caret/available-models.html
+  trControl = train_control,
+  tuneGrid = tune_grid,
+  verbosity = 0.         # don't print messages from xgboost while fitting
+)
+# print(heart_xgb)
+
+# MSE
+yhat_xgb <- predict(xgb, newdata = df[test, ], type = "raw") 
+# the output is a factor variable
+# as.numeric(yhat_xgb) - 1 correctly converts back to 0-1
+yhat_xgb <- as.numeric(yhat_xgb)
+
+pred_y = as.factor(round(yhat_xgb))
+MSE_XGB <- mean((as.numeric(pred_y)- df$Target[test])^2) 
+
+# Root MSE from caret package
+RMSE_XGB <- caret::RMSE(df$Target[test], as.numeric(pred_y))
+
+
+conf_matrix <- confusionMatrix(as.factor(pred_y), as.factor(df[-train, "Target"]))
+misclass_error <- 1 - sum(diag(conf_matrix$table)) / sum(conf_matrix$table)
+```
+
+
+# Results
+
+### Gradient Boosting
+
+```{r, echo=FALSE, message=FALSE, fig.align='center'}
+gbm_rel <- summary.gbm(boost, plotit = FALSE)
+knitr::kable(gbm_rel, col.names = c("Variable", "Relative Influence"), align = "c", caption = "Table 10: Relative Influence (GBM)") %>%
+  kable_material(c("striped", "hover")) %>% kable_styling(position = "center")
+summary.gbm(boost)
+
+d <- cbind("Accuracy" = 0.6069, "Misclasssification Error" = 0.3930723, "MSE" = 1.027861)
+knitr::kable(d, align = "c", caption = "Table 11: Gradient Boosting Evaluation Metrics") %>%
+  kable_material(c("striped", "hover")) %>% kable_styling(position = "center")
+```
+
+The Gradient Boosting model achieved an accuracy of 0.6069, which means it correctly predicts the class of the response variable 60.69% of the time. a misclassification error of 0.3930723, and a mean squared error of 1.027861. The misclassification error suggests that about 39% of the predictions made by the were incorrect, while the MSE suggests that the model's predictions were on average 1.027861 units away from the true values.
+
+As for variable importance, we see that the variables Program (39.5135194) and Age (23.2580573) seem to have the highest influence on the model, with Life_expectancy (0.0023256) having almost negligible influence.
+
+
+### Random Forest
+
+```{r, echo=FALSE, message=FALSE, fig.align='center'}
+forest <- randomForest(as.factor(Target) ~ . , 
+                             data = df[train, ], 
+                             # mtry = n_features,
+                             na.action = na.omit)
+varImpPlot(forest, main = "Figure 12: Variable importance plot (Random forest)")
+
+d <- cbind("Accuracy" = 0.5791, "Misclasssification Error" = 0.4209337, "MSE" = 1.15738)
+knitr::kable(d, align = "c", caption = "Table 13: Random Forest Evaluation Metrics") %>%
+  kable_material(c("striped", "hover")) %>% kable_styling(position = "center")
+```
+
+The Random Forest classification model achieved an accuracy of 0.5791, a misclassification error of 0.4209, and a mean squared error of 1.1574. The model had a moderate accuracy and a relatively higher misclassification error, indicating that it had some difficulty in classifying the response variable correctly.
+
+In terms of variable importance for the random forest model, we observe similar behavior as we did for GBM. Taking a look at the variable importance plot, we see that Program and Age have the highest importance in the model, and Life_expectancy and Nationality have the lowest.
+
+
+### XGBOOST
+
+```{r, echo=FALSE, message=FALSE, fig.align='center'}
+varimp <- varImp(xgb, scale=FALSE)
+top_10_vars <- head(varimp$importance, 10)
+var_imp_df <- data.frame(variable = rownames(top_10_vars), importance = top_10_vars$Overall)
+ggplot(var_imp_df, aes(x = fct_reorder(variable, importance), y = importance)) + 
+  geom_bar(stat = "identity", fill = "steelblue") + 
+  coord_flip() +
+  xlab("Variable") + ylab("Importance") + 
+  ggtitle("Figure 14: Top 10 Variable Importance (XGBOOST)") 
+
+d <- cbind("Accuracy" = 0.3133, "Misclasssification Error" = 0.686747, "MSE" = 0.7567771)
+knitr::kable(d, align = "c", caption = "Table 15: XGBOOST Evaluation Metrics") %>%
+  kable_material(c("striped", "hover")) %>% kable_styling(position = "center")
+```
+
+Based on the XGBoost classification model results, the accuracy is 0.3133 which indicates that the model is not performing well in predicting the correct label. The misclassification error is high at 0.686747, indicating that a significant proportion of the predictions are incorrect. The MSE is 0.7567771, indicating that the model's predicted values differ significantly from the actual values. Although the MSE is lower than that of GBM and Random Forest, the XGBoost model needs improvement in terms of accuracy and misclassification error.
+
+The variable importance plot generated measures the importance of each category of each variable. This generated a very messy plot with many variables that had negligible importance on the model. In order to display the results that mattered most for this analysis, we filtered down the plot so as to display only the top 10 most important variables. We see that Age, Gender with the category Male, and Program with the category Nursing seem to be the most important variables to this model, with Age being the most important. This is very interesting, since the variables that have the most influence in this model are slightly different from those found in the plots for GBM and Random Forest models. For example, Age is the most influential in this model, whereas Program was the most influential in the others. 
+The importance of the rest of the variables in this model is less than 0.05. 
+
+
+# Conclusion
+
+Based on the results from the above models, we can see that the GBM model outperforms the random forest and XGBOOST models in almost all the metrics we are evaluating them against. The XGBOOST model has a lower MSE than the GBM model, however, this might be due to the magnitude of errors made by the model being small, even though it has misclassified a large number of observations. In terms of the particular question we are trying to answer, classifying the observations correctly seems to be more important than the magnitude of error the model missed the classification by. Hence, considering the given dataset, variables, and models the GBM model seems to be the most appropriate model to use to answer our research question.
+
+As for answering the question, we can say that we can predict with 60% accuracy whether a student will drop out of an undergraduate degree program, remain enrolled, or graduate based on factors such as gender, unemployment rates, nationality, 2019 life expectancy (based on nationality), previous qualification, mother’s and father’s qualification, and program of study. This is not a very good accuracy, implying that the model does not do a good job at prediction.
+
+### Limitations
+
+There are many limitations to the project that may have affected results and may also affect future analyses. We wish to address these in the following section.
+We noticed that many of the variables used in these models have little to no influence/importance on the models. Removing these variables and/or adding more influential variables that are better associated with the response variable may greatly impact the prediction quality of the models. However, this may change the scope of the research question, which is why this avenue was not explored. 
+Since we do not have a year variable, it is unclear how the varying trends in social and economic factors through the years impacted our results and predictions.
+In addition to this, almost all of the observations in the dataset come from Portuguese nationals which may lead to our results and predictions being hard to generalize outside of Portugal (due to differences in cultural factors as well as other factors that we cannot account for).
+
+
+# Summary
+
+This report discusses the issue of inequity that university students face and aims to investigate whether certain socioeconomic, demographic, and macroeconomic factors can predict a student's outcome of dropping out, remaining enrolled, or graduating. The data used for this investigation was primarily obtained from a Kaggle dataset and the World Bank Gender Data Portal API. The Kaggle dataset was created by Realinho et al (2022) and included academic, socioeconomic, and macroeconomic data from Portugal for students enrolled between 2008 and 2019. The World Bank data was used to extract 2019 life expectancy values based on the nationality of each student in the dataset. These datasets were then merged, cleaned, and wrangled, with unnecessary columns dropped and numeric encoding reverted. Data exploration involved examining distributions of all variables, frequencies of categorical variables, and summary statistics for numerical variables. 
+We initially used a logistic regression model and found that some variables had a significant impact on the response variable while others did not. Three machine learning models (Gradient Boosting, Random Forest, and XGBOOST) were then used to generate predictions, which were evaluated using accuracy, misclassification error, and mean squared error (MSE). The results showed that the Gradient Boosting model performed the best. The XGBOOST model had the lowest accuracy and highest misclassification error. Overall, we concluded that we can predict a student's outcome of dropping out, remaining enrolled, or graduating based on certain socioeconomic, demographic, and macroeconomic factors with 60% accuracy, however, further modeling and analysis are needed to better predict these outcomes.
+
+
+# References
+
+1. Realinho, V., Machado, J., Baptista, L., & Martins, M. V. (2022). Predicting Student Dropout and Academic Success. Data, 7(11), 146. MDPI AG. Retrieved from http://dx.doi.org/10.3390/data7110146
+

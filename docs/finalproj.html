@@ -1,0 +1,2515 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Mahathi Gandhamaneni" />
+
+
+<title>Predicting Student Dropouts</title>
+
+<script src="site_libs/header-attrs-2.21/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/spacelab.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Final Project Website</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Predicting Student Dropouts</h1>
+<h4 class="author">Mahathi Gandhamaneni</h4>
+<h4 class="date">March 13th, 2023</h4>
+
+</div>
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>In recent times, there has been a spotlight on the inequity that
+students face during university - whether that be during the admissions
+process, or throughout the rest of their studies once they are in.</p>
+<p>In particular, the opportunities that seem to be available to
+everyone regardless of who they are or where they are from, may just be
+a mirage. Through taking a look at the news and articles, it appears
+that not just academics, but demographic, socioeconomic, and
+macroeconomic factors appear to have an effect on students in
+university. For example, students coming from certain backgrounds may
+not have financial, academic, or even emotional support being provided
+by their families.</p>
+<p>Sometimes, these factors may lead to a student dropping out or they
+may lead to a student graduating with honours. What we want to
+investigate here is whether we can predict what outcome a student will
+face based on certain socioeconomic, demographic, and macroeconomic
+factors. Specifically, the question we want to answer in this project is
+as follows: <strong>Can we predict whether a student will drop out of an
+undergraduate degree program or not, based on factors such as gender,
+unemployment rates, nationality, 2019 life expectancy (based on
+nationality), previous qualification, mother’s and father’s
+qualification, and program of study?</strong></p>
+</div>
+<div id="methods" class="section level1">
+<h1>Methods</h1>
+<div id="data-collection" class="section level2">
+<h2>Data Collection</h2>
+<p>The data was primarily acquired from two sources: a Kaggle dataset
+entitled “Predict students’ dropout and academic success” (<a
+href="https://www.kaggle.com/datasets/thedevastator/higher-education-predictors-of-student-retention?datasetId=2780494&amp;searchQuery=cleaning"
+class="uri">https://www.kaggle.com/datasets/thedevastator/higher-education-predictors-of-student-retention?datasetId=2780494&amp;searchQuery=cleaning</a>)
+which I will henceforth refer to as the “Student Data”, and 2019 life
+expectancy data extracted using the World Bank Gender Data Portal API
+(which I will refer to as the “World Bank Data”).</p>
+<p>The main data is actually derived from a dataset created by Realinho
+et al (2022) for their paper entitled Predicting Student Dropout and
+Academic Success (Realinho et al). This paper is where I was able to
+find all the background information about the dataset for the purposes
+of understanding it, and using it to perform data analysis. The dataset
+was developed at the Polytechnic Institute of Portalegre and was used to
+build machine learning models to predict academic performance. The data
+in the dataset was derived from several sources of academic (student),
+socioeconomic, and macroeconomic data in Portugal (Realinho et al can be
+consulted for more detail into the sources). It refers to student
+records enrolled between the academic years of 2008 to 2019. Almost all
+the categorical variables in the dataset are numerically encoded (the
+numeric encoding values are found at <a
+href="https://www.mdpi.com/2306-5729/7/11/146"
+class="uri">https://www.mdpi.com/2306-5729/7/11/146</a>). In order to
+simplify data exploration and analysis, as well as enhance readability,
+we have decided to replace the numeric encoding with the real values.
+The main data does not have a reference to the year from which an
+observation was extracted, so it is very difficult to figure out what
+year of life expectancy data to associate with which record. In order to
+simplify the process (even though it may be at the expense of accuracy),
+2019 life expectancy figures were used for every observation respective
+to their nationality.</p>
+<p>Within the World Bank API, every country is assigned a three letter
+ISO code which allows us to concatenate the appropriate URL for each
+country so that we can extract the life expectancy data for 2019. For
+any given country, the API link for the average life expectancy in 2019
+is as follows: “<a href="http://api.worldbank.org/v2/country/%5BISO"
+class="uri">http://api.worldbank.org/v2/country/[ISO</a> COUNTRY
+CODE]/indicator/SP.DYN.LE00.IN?date=2019”, where [ISO COUNTRY CODE] is a
+standardized code system followed worldwide. The main data exhibits that
+the student demographic within the data was no more than 21
+nationalities. Looking at these 21 values, we can find the ISO code for
+each one of the countries, and iterate through them all, extracting the
+appropriate figures and storing them in a dataframe. After this process
+of data extraction, the main data and the world bank data were then
+merged through a left join on the nationalities, so that each
+observation in the final dataframe had a 2019 life expectancy value
+associated with it based on the student’s nationality.</p>
+</div>
+<div id="data-cleaning-wrangling" class="section level2">
+<h2>Data Cleaning &amp; Wrangling</h2>
+<p>Since the main data was already used in analysis and modelling in a
+prior study, it was already cleaned and prepared well. There were no
+missing values or any other immediate issues that needed to be addressed
+before the data could be used. However, there were quite a few columns
+in the main data that we will not be using in our analysis that needed
+to be dropped from the data frame.</p>
+In fact, of the 35 variables in the main dataset, the only variables
+selected were:
+<p>Some of the variables within the main data were also renamed to
+minimize length and to also increase readability.</p>
+<p>Similarly, when it comes to the life expectancy data frame that we
+extracted, there were columns that were unnecessary and that needed to
+be dropped. Specifically, we were interested in only two columns - the
+ISO country code (which served as a unique identifier until an ID column
+was added) and the actual life expectancy value column. An ID column was
+added to this dataframe in order to match the nationality encoding in
+the main dataset to make merging the two easier. After the two
+dataframes were merged, the ISO country code column was removed, thus
+leaving only the life expectancy value that we need.</p>
+</div>
+<div id="data-exploration" class="section level2">
+<h2>Data Exploration</h2>
+<p>Now that we have our cleaned and wrangled data, we can begin to
+explore key variables and associations.</p>
+<p>In total, the dataset has 4424 observations and 10 variables. In
+order to explore the data, we decided to take a look at the
+distributions of all the variables, frequencies of categorical
+variables, and summary statistics for numerical variables. Specifically,
+we explored the variables Course, Previous qualification, Mother’s
+qualification, and Father’s qualification through bar plots and
+frequency tables. We explored the numerical variables Age, Unemployment
+rate, and Life expectancy through histograms and summary statistics
+tables. As for the variables gender and target, we used frequency tables
+to examine these since they have comparatively fewer categories as
+compared to the other variables in the data set and their composition
+can be understood through looking at the frequency of their values.</p>
+</div>
+</div>
+<div id="preliminary-results" class="section level1">
+<h1>Preliminary Results</h1>
+<pre class="r"><code># undoing numerical encoding
+
+# nationality
+df$Nationality[df$Nationality == &quot;1&quot;] &lt;- &quot;Portuguese&quot;
+df$Nationality[df$Nationality == &quot;2&quot;] &lt;- &quot;German&quot;
+df$Nationality[df$Nationality == &quot;3&quot;] &lt;- &quot;Spanish&quot;
+df$Nationality[df$Nationality == &quot;4&quot;] &lt;- &quot;Italian&quot;
+df$Nationality[df$Nationality == &quot;5&quot;] &lt;- &quot;Dutch&quot;
+df$Nationality[df$Nationality == &quot;6&quot;] &lt;- &quot;English&quot;
+df$Nationality[df$Nationality == &quot;7&quot;] &lt;- &quot;Lithuanian&quot;
+df$Nationality[df$Nationality == &quot;8&quot;] &lt;- &quot;Angolan&quot;
+df$Nationality[df$Nationality == &quot;9&quot;] &lt;- &quot;Cape Verdean&quot;
+df$Nationality[df$Nationality == &quot;10&quot;] &lt;- &quot;Guinean&quot;
+df$Nationality[df$Nationality == &quot;11&quot;] &lt;- &quot;Mozambican&quot;
+df$Nationality[df$Nationality == &quot;12&quot;] &lt;- &quot;Santomean&quot;
+df$Nationality[df$Nationality == &quot;13&quot;] &lt;- &quot;Turkish&quot;
+df$Nationality[df$Nationality == &quot;14&quot;] &lt;- &quot;Brazilian&quot;
+df$Nationality[df$Nationality == &quot;15&quot;] &lt;- &quot;Romanian&quot;
+df$Nationality[df$Nationality == &quot;16&quot;] &lt;- &quot;Moldova (Republic of)&quot;
+df$Nationality[df$Nationality == &quot;17&quot;] &lt;- &quot;Mexican&quot;
+df$Nationality[df$Nationality == &quot;18&quot;] &lt;- &quot;Ukrainian&quot;
+df$Nationality[df$Nationality == &quot;19&quot;] &lt;- &quot;Russian&quot;
+df$Nationality[df$Nationality == &quot;20&quot;] &lt;- &quot;Cuban&quot;
+df$Nationality[df$Nationality == &quot;21&quot;] &lt;- &quot;Colombian&quot;
+
+#course
+df$Program[df$Program == &quot;1&quot;] &lt;- &quot;Biofuel Production Technologies&quot;
+df$Program[df$Program == &quot;2&quot;] &lt;- &quot;Animation and Multimedia Design&quot;
+df$Program[df$Program == &quot;3&quot;] &lt;- &quot;Social Service (evening attendance)&quot;
+df$Program[df$Program == &quot;4&quot;] &lt;- &quot;Agronomy&quot;
+df$Program[df$Program == &quot;5&quot;] &lt;- &quot;Communication Design&quot;
+df$Program[df$Program == &quot;6&quot;] &lt;- &quot;Veterinary Nursing&quot;
+df$Program[df$Program == &quot;7&quot;] &lt;- &quot;Informatics Engineering&quot;
+df$Program[df$Program == &quot;8&quot;] &lt;- &quot;Equiniculture&quot;
+df$Program[df$Program == &quot;9&quot;] &lt;- &quot;Management&quot;
+df$Program[df$Program == &quot;10&quot;] &lt;- &quot;Social Service&quot;
+df$Program[df$Program == &quot;11&quot;] &lt;- &quot;Tourism&quot;
+df$Program[df$Program == &quot;12&quot;] &lt;- &quot;Nursing&quot;
+df$Program[df$Program == &quot;13&quot;] &lt;- &quot;Oral Hygiene&quot;
+df$Program[df$Program == &quot;14&quot;] &lt;- &quot;Advertising and Marketing Management&quot;
+df$Program[df$Program == &quot;15&quot;] &lt;- &quot;Journalism and Communication&quot;
+df$Program[df$Program == &quot;16&quot;] &lt;- &quot;Basic Education&quot;
+df$Program[df$Program == &quot;17&quot;] &lt;- &quot;Management (evening attendance)&quot;
+
+#prev quali
+df$Prev_quali[df$Prev_quali == &quot;1&quot;] &lt;- &quot;Secondary education&quot;
+df$Prev_quali[df$Prev_quali == &quot;2&quot;] &lt;- &quot;Higher education—bachelor’s degree&quot;
+df$Prev_quali[df$Prev_quali == &quot;3&quot;] &lt;- &quot;Higher education—degree&quot;
+df$Prev_quali[df$Prev_quali == &quot;4&quot;] &lt;- &quot;Higher education—master’s degree&quot;
+df$Prev_quali[df$Prev_quali == &quot;5&quot;] &lt;- &quot;Higher education—doctorate&quot;
+df$Prev_quali[df$Prev_quali == &quot;6&quot;] &lt;- &quot;Frequency of higher education&quot;
+df$Prev_quali[df$Prev_quali == &quot;7&quot;] &lt;- &quot;12th year of schooling—not completed&quot;
+df$Prev_quali[df$Prev_quali == &quot;8&quot;] &lt;- &quot;11th year of schooling—not completed&quot;
+df$Prev_quali[df$Prev_quali == &quot;9&quot;] &lt;- &quot;Other—11th year of schooling&quot;
+df$Prev_quali[df$Prev_quali == &quot;10&quot;] &lt;- &quot;10th year of schooling&quot;
+df$Prev_quali[df$Prev_quali == &quot;11&quot;] &lt;- &quot;10th year of schooling—not completed&quot;
+df$Prev_quali[df$Prev_quali == &quot;12&quot;] &lt;- &quot;Basic education 3rd cycle (9th/10th/11th year) or equivalent&quot;
+df$Prev_quali[df$Prev_quali == &quot;13&quot;] &lt;- &quot;Basic education 2nd cycle (6th/7th/8th year) or equivalent&quot;
+df$Prev_quali[df$Prev_quali == &quot;14&quot;] &lt;- &quot;Technological specialization course&quot;
+df$Prev_quali[df$Prev_quali == &quot;15&quot;] &lt;- &quot;Higher education—degree (1st cycle)&quot;
+df$Prev_quali[df$Prev_quali == &quot;16&quot;] &lt;- &quot;Professional higher technical course&quot;
+df$Prev_quali[df$Prev_quali == &quot;17&quot;] &lt;- &quot;Higher education—master’s degree (2nd cycle)&quot;
+
+#mothers quali
+df$Mom_quali[df$Mom_quali == &quot;1&quot;] &lt;- &quot;Secondary Education—12th Year of Schooling or Equivalent&quot;
+df$Mom_quali[df$Mom_quali == &quot;2&quot;] &lt;- &quot;Higher Education—bachelor’s degree&quot;
+df$Mom_quali[df$Mom_quali == &quot;3&quot;] &lt;- &quot;Higher Education—degree&quot;
+df$Mom_quali[df$Mom_quali == &quot;4&quot;] &lt;- &quot;Higher Education—master’s degree&quot;
+df$Mom_quali[df$Mom_quali == &quot;5&quot;] &lt;- &quot;Higher Education—doctorate&quot;
+df$Mom_quali[df$Mom_quali == &quot;6&quot;] &lt;- &quot;Frequency of Higher Education&quot;
+df$Mom_quali[df$Mom_quali == &quot;7&quot;] &lt;- &quot;12th Year of Schooling—not completed&quot;
+df$Mom_quali[df$Mom_quali == &quot;8&quot;] &lt;- &quot;11th Year of Schooling—not completed&quot;
+df$Mom_quali[df$Mom_quali == &quot;9&quot;] &lt;- &quot;7th Year (Old)&quot;
+df$Mom_quali[df$Mom_quali == &quot;10&quot;] &lt;- &quot;Other—11th Year of Schooling&quot;
+df$Mom_quali[df$Mom_quali == &quot;11&quot;] &lt;- &quot;2nd year complementary high school course&quot;
+df$Mom_quali[df$Mom_quali == &quot;12&quot;] &lt;- &quot;10th Year of Schooling&quot;
+df$Mom_quali[df$Mom_quali == &quot;13&quot;] &lt;- &quot;General commerce course&quot;
+df$Mom_quali[df$Mom_quali == &quot;14&quot;] &lt;- &quot;Basic Education 3rd Cycle (9th/10th/11th Year) or Equivalent&quot;
+df$Mom_quali[df$Mom_quali == &quot;15&quot;] &lt;- &quot;Complementary High School Course&quot;
+df$Mom_quali[df$Mom_quali == &quot;16&quot;] &lt;- &quot;Technical-professional course&quot;
+df$Mom_quali[df$Mom_quali == &quot;17&quot;] &lt;- &quot;Complementary High School Course—not concluded&quot;
+df$Mom_quali[df$Mom_quali == &quot;18&quot;] &lt;- &quot;7th year of schooling&quot;
+df$Mom_quali[df$Mom_quali == &quot;19&quot;] &lt;- &quot;2nd cycle of the general high school course&quot;
+df$Mom_quali[df$Mom_quali == &quot;20&quot;] &lt;- &quot;9th Year of Schooling—not completed&quot;
+df$Mom_quali[df$Mom_quali == &quot;21&quot;] &lt;- &quot;8th year of schooling&quot;
+df$Mom_quali[df$Mom_quali == &quot;22&quot;] &lt;- &quot;General Course of Administration and Commerce&quot;
+df$Mom_quali[df$Mom_quali == &quot;23&quot;] &lt;- &quot;Supplementary Accounting and Administration&quot;
+df$Mom_quali[df$Mom_quali == &quot;24&quot;] &lt;- &quot;Unknown&quot;
+df$Mom_quali[df$Mom_quali == &quot;25&quot;] &lt;- &quot;Cannot read or write&quot;
+df$Mom_quali[df$Mom_quali == &quot;26&quot;] &lt;- &quot;Can read without having a 4th year of schooling&quot;
+df$Mom_quali[df$Mom_quali == &quot;27&quot;] &lt;- &quot;Basic education 1st cycle (4th/5th year) or equivalent&quot;
+df$Mom_quali[df$Mom_quali == &quot;28&quot;] &lt;- &quot;Basic Education 2nd Cycle (6th/7th/8th Year) or equivalent&quot;
+df$Mom_quali[df$Mom_quali == &quot;29&quot;] &lt;- &quot;Technological specialization course&quot;
+df$Mom_quali[df$Mom_quali == &quot;30&quot;] &lt;- &quot;Higher education—degree (1st cycle)&quot;
+df$Mom_quali[df$Mom_quali == &quot;31&quot;] &lt;- &quot;Specialized higher studies course&quot;
+df$Mom_quali[df$Mom_quali == &quot;32&quot;] &lt;- &quot;Professional higher technical course&quot;
+df$Mom_quali[df$Mom_quali == &quot;33&quot;] &lt;- &quot;Higher Education—master’s degree (2nd cycle)&quot;
+df$Mom_quali[df$Mom_quali == &quot;34&quot;] &lt;- &quot;Higher Education—doctorate (3rd cycle)&quot;
+
+#fathers quali
+df$Dad_quali[df$Dad_quali == &quot;1&quot;] &lt;- &quot;Secondary Education—12th Year of Schooling or Equivalent&quot;
+df$Dad_quali[df$Dad_quali == &quot;2&quot;] &lt;- &quot;Higher Education—bachelor’s degree&quot;
+df$Dad_quali[df$Dad_quali == &quot;3&quot;] &lt;- &quot;Higher Education—degree&quot;
+df$Dad_quali[df$Dad_quali == &quot;4&quot;] &lt;- &quot;Higher Education—master’s degree&quot;
+df$Dad_quali[df$Dad_quali == &quot;5&quot;] &lt;- &quot;Higher Education—doctorate&quot;
+df$Dad_quali[df$Dad_quali == &quot;6&quot;] &lt;- &quot;Frequency of Higher Education&quot;
+df$Dad_quali[df$Dad_quali == &quot;7&quot;] &lt;- &quot;12th Year of Schooling—not completed&quot;
+df$Dad_quali[df$Dad_quali == &quot;8&quot;] &lt;- &quot;11th Year of Schooling—not completed&quot;
+df$Dad_quali[df$Dad_quali == &quot;9&quot;] &lt;- &quot;7th Year (Old)&quot;
+df$Dad_quali[df$Dad_quali == &quot;10&quot;] &lt;- &quot;Other—11th Year of Schooling&quot;
+df$Dad_quali[df$Dad_quali == &quot;11&quot;] &lt;- &quot;2nd year complementary high school course&quot;
+df$Dad_quali[df$Dad_quali == &quot;12&quot;] &lt;- &quot;10th Year of Schooling&quot;
+df$Dad_quali[df$Dad_quali == &quot;13&quot;] &lt;- &quot;General commerce course&quot;
+df$Dad_quali[df$Dad_quali == &quot;14&quot;] &lt;- &quot;Basic Education 3rd Cycle (9th/10th/11th Year) or Equivalent&quot;
+df$Dad_quali[df$Dad_quali == &quot;15&quot;] &lt;- &quot;Complementary High School Course&quot;
+df$Dad_quali[df$Dad_quali == &quot;16&quot;] &lt;- &quot;Technical-professional course&quot;
+df$Dad_quali[df$Dad_quali == &quot;17&quot;] &lt;- &quot;Complementary High School Course—not concluded&quot;
+df$Dad_quali[df$Dad_quali == &quot;18&quot;] &lt;- &quot;7th year of schooling&quot;
+df$Dad_quali[df$Dad_quali == &quot;19&quot;] &lt;- &quot;2nd cycle of the general high school course&quot;
+df$Dad_quali[df$Dad_quali == &quot;20&quot;] &lt;- &quot;9th Year of Schooling—not completed&quot;
+df$Dad_quali[df$Dad_quali == &quot;21&quot;] &lt;- &quot;8th year of schooling&quot;
+df$Dad_quali[df$Dad_quali == &quot;22&quot;] &lt;- &quot;General Course of Administration and Commerce&quot;
+df$Dad_quali[df$Dad_quali == &quot;23&quot;] &lt;- &quot;Supplementary Accounting and Administration&quot;
+df$Dad_quali[df$Dad_quali == &quot;24&quot;] &lt;- &quot;Unknown&quot;
+df$Dad_quali[df$Dad_quali == &quot;25&quot;] &lt;- &quot;Cannot read or write&quot;
+df$Dad_quali[df$Dad_quali == &quot;26&quot;] &lt;- &quot;Can read without having a 4th year of schooling&quot;
+df$Dad_quali[df$Dad_quali == &quot;27&quot;] &lt;- &quot;Basic education 1st cycle (4th/5th year) or equivalent&quot;
+df$Dad_quali[df$Dad_quali == &quot;28&quot;] &lt;- &quot;Basic Education 2nd Cycle (6th/7th/8th Year) or equivalent&quot;
+df$Dad_quali[df$Dad_quali == &quot;29&quot;] &lt;- &quot;Technological specialization course&quot;
+df$Dad_quali[df$Dad_quali == &quot;30&quot;] &lt;- &quot;Higher education—degree (1st cycle)&quot;
+df$Dad_quali[df$Dad_quali == &quot;31&quot;] &lt;- &quot;Specialized higher studies course&quot;
+df$Dad_quali[df$Dad_quali == &quot;32&quot;] &lt;- &quot;Professional higher technical course&quot;
+df$Dad_quali[df$Dad_quali == &quot;33&quot;] &lt;- &quot;Higher Education—master’s degree (2nd cycle)&quot;
+df$Dad_quali[df$Dad_quali == &quot;34&quot;] &lt;- &quot;Higher Education—doctorate (3rd cycle)&quot;
+
+#gender
+df$Gender[df$Gender == &quot;0&quot;] &lt;- &quot;Female&quot;
+df$Gender[df$Gender == &quot;1&quot;] &lt;- &quot;Male&quot;
+
+df$Nationality &lt;- as.factor(df$Nationality)
+df$Program &lt;- as.factor(df$Program)
+df$Prev_quali &lt;- as.factor(df$Prev_quali)
+df$Mom_quali &lt;- as.factor(df$Mom_quali)
+df$Dad_quali &lt;- as.factor(df$Dad_quali)
+df$Gender &lt;- as.factor(df$Gender)
+apply(df, 2, unique)</code></pre>
+<pre><code>## $Nationality
+##  [1] &quot;Portuguese&quot;            &quot;German&quot;                &quot;Spanish&quot;              
+##  [4] &quot;Italian&quot;               &quot;Dutch&quot;                 &quot;English&quot;              
+##  [7] &quot;Lithuanian&quot;            &quot;Angolan&quot;               &quot;Cape Verdean&quot;         
+## [10] &quot;Guinean&quot;               &quot;Mozambican&quot;            &quot;Santomean&quot;            
+## [13] &quot;Turkish&quot;               &quot;Brazilian&quot;             &quot;Romanian&quot;             
+## [16] &quot;Moldova (Republic of)&quot; &quot;Mexican&quot;               &quot;Ukrainian&quot;            
+## [19] &quot;Russian&quot;               &quot;Cuban&quot;                 &quot;Colombian&quot;            
+## 
+## $Program
+##  [1] &quot;Animation and Multimedia Design&quot;     
+##  [2] &quot;Tourism&quot;                             
+##  [3] &quot;Communication Design&quot;                
+##  [4] &quot;Journalism and Communication&quot;        
+##  [5] &quot;Social Service (evening attendance)&quot; 
+##  [6] &quot;Management (evening attendance)&quot;     
+##  [7] &quot;Nursing&quot;                             
+##  [8] &quot;Equiniculture&quot;                       
+##  [9] &quot;Social Service&quot;                      
+## [10] &quot;Advertising and Marketing Management&quot;
+## [11] &quot;Basic Education&quot;                     
+## [12] &quot;Veterinary Nursing&quot;                  
+## [13] &quot;Oral Hygiene&quot;                        
+## [14] &quot;Management&quot;                          
+## [15] &quot;Agronomy&quot;                            
+## [16] &quot;Biofuel Production Technologies&quot;     
+## [17] &quot;Informatics Engineering&quot;             
+## 
+## $Prev_quali
+##  [1] &quot;Secondary education&quot;                                         
+##  [2] &quot;Basic education 3rd cycle (9th/10th/11th year) or equivalent&quot;
+##  [3] &quot;Professional higher technical course&quot;                        
+##  [4] &quot;Technological specialization course&quot;                         
+##  [5] &quot;11th year of schooling—not completed&quot;                        
+##  [6] &quot;Higher education—degree&quot;                                     
+##  [7] &quot;Higher education—degree (1st cycle)&quot;                         
+##  [8] &quot;Higher education—bachelor’s degree&quot;                          
+##  [9] &quot;Higher education—master’s degree&quot;                            
+## [10] &quot;Other—11th year of schooling&quot;                                
+## [11] &quot;Higher education—master’s degree (2nd cycle)&quot;                
+## [12] &quot;10th year of schooling—not completed&quot;                        
+## [13] &quot;Frequency of higher education&quot;                               
+## [14] &quot;12th year of schooling—not completed&quot;                        
+## [15] &quot;Basic education 2nd cycle (6th/7th/8th year) or equivalent&quot;  
+## [16] &quot;Higher education—doctorate&quot;                                  
+## [17] &quot;10th year of schooling&quot;                                      
+## 
+## $Mom_quali
+##  [1] &quot;General commerce course&quot;                                     
+##  [2] &quot;Secondary Education—12th Year of Schooling or Equivalent&quot;    
+##  [3] &quot;General Course of Administration and Commerce&quot;               
+##  [4] &quot;Supplementary Accounting and Administration&quot;                 
+##  [5] &quot;Higher Education—degree&quot;                                     
+##  [6] &quot;Higher Education—master’s degree&quot;                            
+##  [7] &quot;Basic education 1st cycle (4th/5th year) or equivalent&quot;      
+##  [8] &quot;Higher Education—bachelor’s degree&quot;                          
+##  [9] &quot;2nd cycle of the general high school course&quot;                 
+## [10] &quot;Other—11th Year of Schooling&quot;                                
+## [11] &quot;Cannot read or write&quot;                                        
+## [12] &quot;12th Year of Schooling—not completed&quot;                        
+## [13] &quot;Higher Education—doctorate&quot;                                  
+## [14] &quot;Unknown&quot;                                                     
+## [15] &quot;7th Year (Old)&quot;                                              
+## [16] &quot;Can read without having a 4th year of schooling&quot;             
+## [17] &quot;7th year of schooling&quot;                                       
+## [18] &quot;2nd year complementary high school course&quot;                   
+## [19] &quot;9th Year of Schooling—not completed&quot;                         
+## [20] &quot;8th year of schooling&quot;                                       
+## [21] &quot;Frequency of Higher Education&quot;                               
+## [22] &quot;11th Year of Schooling—not completed&quot;                        
+## [23] &quot;Complementary High School Course—not concluded&quot;              
+## [24] &quot;Basic Education 2nd Cycle (6th/7th/8th Year) or equivalent&quot;  
+## [25] &quot;10th Year of Schooling&quot;                                      
+## [26] &quot;Basic Education 3rd Cycle (9th/10th/11th Year) or Equivalent&quot;
+## [27] &quot;Technical-professional course&quot;                               
+## [28] &quot;Complementary High School Course&quot;                            
+## [29] &quot;Technological specialization course&quot;                         
+## 
+## $Dad_quali
+##  [1] &quot;Other—11th Year of Schooling&quot;                                
+##  [2] &quot;Higher Education—degree&quot;                                     
+##  [3] &quot;Basic education 1st cycle (4th/5th year) or equivalent&quot;      
+##  [4] &quot;Basic Education 2nd Cycle (6th/7th/8th Year) or equivalent&quot;  
+##  [5] &quot;Basic Education 3rd Cycle (9th/10th/11th Year) or Equivalent&quot;
+##  [6] &quot;Secondary Education—12th Year of Schooling or Equivalent&quot;    
+##  [7] &quot;Higher Education—doctorate&quot;                                  
+##  [8] &quot;Unknown&quot;                                                     
+##  [9] &quot;Higher Education—bachelor’s degree&quot;                          
+## [10] &quot;Higher Education—master’s degree&quot;                            
+## [11] &quot;Technological specialization course&quot;                         
+## [12] &quot;7th Year (Old)&quot;                                              
+## [13] &quot;12th Year of Schooling—not completed&quot;                        
+## [14] &quot;Can read without having a 4th year of schooling&quot;             
+## [15] &quot;7th year of schooling&quot;                                       
+## [16] &quot;Higher education—degree (1st cycle)&quot;                         
+## [17] &quot;10th Year of Schooling&quot;                                      
+## [18] &quot;Complementary High School Course&quot;                            
+## [19] &quot;Cannot read or write&quot;                                        
+## [20] &quot;Professional higher technical course&quot;                        
+## [21] &quot;Specialized higher studies course&quot;                           
+## [22] &quot;Technical-professional course&quot;                               
+## [23] &quot;2nd year complementary high school course&quot;                   
+## [24] &quot;9th Year of Schooling—not completed&quot;                         
+## [25] &quot;Higher Education—master’s degree (2nd cycle)&quot;                
+## [26] &quot;General commerce course&quot;                                     
+## [27] &quot;11th Year of Schooling—not completed&quot;                        
+## [28] &quot;Frequency of Higher Education&quot;                               
+## [29] &quot;8th year of schooling&quot;                                       
+## [30] &quot;Complementary High School Course—not concluded&quot;              
+## [31] &quot;Higher Education—doctorate (3rd cycle)&quot;                      
+## [32] &quot;2nd cycle of the general high school course&quot;                 
+## [33] &quot;Supplementary Accounting and Administration&quot;                 
+## [34] &quot;General Course of Administration and Commerce&quot;               
+## 
+## $Gender
+## [1] &quot;Male&quot;   &quot;Female&quot;
+## 
+## $Age
+##  [1] &quot;20&quot; &quot;19&quot; &quot;45&quot; &quot;50&quot; &quot;18&quot; &quot;22&quot; &quot;21&quot; &quot;34&quot; &quot;37&quot; &quot;43&quot; &quot;55&quot; &quot;39&quot; &quot;29&quot; &quot;24&quot; &quot;27&quot;
+## [16] &quot;23&quot; &quot;26&quot; &quot;33&quot; &quot;35&quot; &quot;25&quot; &quot;44&quot; &quot;36&quot; &quot;47&quot; &quot;28&quot; &quot;38&quot; &quot;30&quot; &quot;31&quot; &quot;32&quot; &quot;40&quot; &quot;42&quot;
+## [31] &quot;48&quot; &quot;49&quot; &quot;46&quot; &quot;41&quot; &quot;70&quot; &quot;60&quot; &quot;53&quot; &quot;51&quot; &quot;52&quot; &quot;54&quot; &quot;61&quot; &quot;58&quot; &quot;57&quot; &quot;17&quot; &quot;59&quot;
+## [46] &quot;62&quot;
+## 
+## $Unemp_rate
+##  [1] &quot;10.8&quot; &quot;13.9&quot; &quot; 9.4&quot; &quot;16.2&quot; &quot;15.5&quot; &quot; 8.9&quot; &quot;12.7&quot; &quot;11.1&quot; &quot; 7.6&quot; &quot;12.4&quot;
+## 
+## $Target
+## [1] &quot;Dropout&quot;  &quot;Graduate&quot; &quot;Enrolled&quot;
+## 
+## $Life_expectancy
+##  [1] &quot;81.67561&quot; &quot;81.29268&quot; &quot;83.83171&quot; &quot;83.49756&quot; &quot;82.11220&quot; &quot;81.20488&quot;
+##  [7] &quot;76.28293&quot; &quot;62.44800&quot; &quot;76.00400&quot; &quot;59.72000&quot; &quot;61.16600&quot; &quot;68.52300&quot;
+## [13] &quot;77.83200&quot; &quot;75.33800&quot; &quot;75.60732&quot; &quot;70.93500&quot; &quot;74.20200&quot; &quot;71.82732&quot;
+## [19] &quot;73.08390&quot; &quot;77.61100&quot; &quot;76.75200&quot;</code></pre>
+<div id="age" class="section level3">
+<h3>Age</h3>
+<img src="finalproj_files/figure-html/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" />
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+Table 1: Summary Statistics - Age
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Variable
+</th>
+<th style="text-align:left;">
+N
+</th>
+<th style="text-align:left;">
+Mean
+</th>
+<th style="text-align:left;">
+Median
+</th>
+<th style="text-align:left;">
+Min
+</th>
+<th style="text-align:left;">
+25%
+</th>
+<th style="text-align:left;">
+75%
+</th>
+<th style="text-align:left;">
+Max
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Age
+</td>
+<td style="text-align:left;">
+4424
+</td>
+<td style="text-align:left;">
+23
+</td>
+<td style="text-align:left;">
+20
+</td>
+<td style="text-align:left;">
+17
+</td>
+<td style="text-align:left;">
+19
+</td>
+<td style="text-align:left;">
+25
+</td>
+<td style="text-align:left;">
+70
+</td>
+</tr>
+</tbody>
+</table>
+<p>The range of ages in the data lies between 17 and 70. Taking a look
+at the summary statistics and distribution of values, we see that this
+variable is heavily right skewed. It appears that 50% of the
+observations lie between 17-20 years old, with the highest frequency
+being at 18 years old. This is nothing unusual, since most students
+enroll in undergraduate degrees between these ages. The oldest
+observation belonging to a 70 year old is not unusual either since many
+adults choose to attend universities later on in their lives.</p>
+</div>
+<div id="nationality" class="section level3">
+<h3>Nationality</h3>
+<div class="table"
+style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:1000px; overflow-x: scroll; width:500px;  margin-left: auto; margin-right: auto;">
+<table class=" lightable-material lightable-striped lightable-hover" style="font-family: &quot;Source Sans Pro&quot;, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<caption>
+Table 2: Nationality Frequency Table
+</caption>
+<thead>
+<tr>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Nationality Number
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Frequency
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center;">
+Angolan
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Brazilian
+</td>
+<td style="text-align:center;">
+38
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Cape Verdean
+</td>
+<td style="text-align:center;">
+13
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Colombian
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Cuban
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Dutch
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+English
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+German
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Guinean
+</td>
+<td style="text-align:center;">
+5
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Italian
+</td>
+<td style="text-align:center;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Lithuanian
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Mexican
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Moldova (Republic of)
+</td>
+<td style="text-align:center;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Mozambican
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Portuguese
+</td>
+<td style="text-align:center;">
+4314
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Romanian
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Russian
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Santomean
+</td>
+<td style="text-align:center;">
+14
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Spanish
+</td>
+<td style="text-align:center;">
+13
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Turkish
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Ukrainian
+</td>
+<td style="text-align:center;">
+3
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><img src="finalproj_files/figure-html/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>There are a total of 21 nationalities amongst all observations in the
+data. Looking at the distribution of nationalities in the data, we see
+that almost all the observations belong to students of Portuguese
+descent. Since this data was collected from Portuguese institutions,
+this is expected. There may be other reasons for such a low
+concentration of observations with other nationalities such as
+incomplete observations, etc. It is also important to take into account
+that this may perhaps lead to non-generalizability of results.</p>
+</div>
+<div id="courseprogram" class="section level3">
+<h3>Course/Program</h3>
+<div class="table"
+style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:1000px; overflow-x: scroll; width:500px;  margin-left: auto; margin-right: auto;">
+<table class=" lightable-material lightable-striped lightable-hover" style="font-family: &quot;Source Sans Pro&quot;, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<caption>
+Table 3: Course/Program Frequency Table
+</caption>
+<thead>
+<tr>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Program Number
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Frequency
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center;">
+Advertising and Marketing Management
+</td>
+<td style="text-align:center;">
+268
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Agronomy
+</td>
+<td style="text-align:center;">
+210
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Animation and Multimedia Design
+</td>
+<td style="text-align:center;">
+215
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Basic Education
+</td>
+<td style="text-align:center;">
+192
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Biofuel Production Technologies
+</td>
+<td style="text-align:center;">
+12
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Communication Design
+</td>
+<td style="text-align:center;">
+226
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Equiniculture
+</td>
+<td style="text-align:center;">
+141
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Informatics Engineering
+</td>
+<td style="text-align:center;">
+170
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Journalism and Communication
+</td>
+<td style="text-align:center;">
+331
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Management
+</td>
+<td style="text-align:center;">
+380
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Management (evening attendance)
+</td>
+<td style="text-align:center;">
+268
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Nursing
+</td>
+<td style="text-align:center;">
+766
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Oral Hygiene
+</td>
+<td style="text-align:center;">
+86
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Social Service
+</td>
+<td style="text-align:center;">
+355
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Social Service (evening attendance)
+</td>
+<td style="text-align:center;">
+215
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Tourism
+</td>
+<td style="text-align:center;">
+252
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Veterinary Nursing
+</td>
+<td style="text-align:center;">
+337
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><img src="finalproj_files/figure-html/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>There are a total of 17 programs of study amongst all observations.
+The observations seem to be mostly evenly distributed among all
+programs, except Biofuel Production Technologies has the least number of
+observations (only 12) and Nursing has the most number of observations
+(766). A detailed interactive distribution with the number of
+observations per program can be found on the homepage of the final
+project website (Figure 2).</p>
+</div>
+<div id="previous-qualification" class="section level3">
+<h3>Previous Qualification</h3>
+<div class="table"
+style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:1000px; overflow-x: scroll; width:500px;  margin-left: auto; margin-right: auto;">
+<table class=" lightable-material lightable-striped lightable-hover" style="font-family: &quot;Source Sans Pro&quot;, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<caption>
+Table 4: Previous Qualification Frequency Table
+</caption>
+<thead>
+<tr>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Previous Qualification Number
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Frequency
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center;">
+10th year of schooling
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+10th year of schooling—not completed
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+11th year of schooling—not completed
+</td>
+<td style="text-align:center;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+12th year of schooling—not completed
+</td>
+<td style="text-align:center;">
+11
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Basic education 2nd cycle (6th/7th/8th year) or equivalent
+</td>
+<td style="text-align:center;">
+7
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Basic education 3rd cycle (9th/10th/11th year) or equivalent
+</td>
+<td style="text-align:center;">
+162
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Frequency of higher education
+</td>
+<td style="text-align:center;">
+16
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher education—bachelor’s degree
+</td>
+<td style="text-align:center;">
+23
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher education—degree
+</td>
+<td style="text-align:center;">
+126
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher education—degree (1st cycle)
+</td>
+<td style="text-align:center;">
+40
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher education—doctorate
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher education—master’s degree
+</td>
+<td style="text-align:center;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher education—master’s degree (2nd cycle)
+</td>
+<td style="text-align:center;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Other—11th year of schooling
+</td>
+<td style="text-align:center;">
+45
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Professional higher technical course
+</td>
+<td style="text-align:center;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Secondary education
+</td>
+<td style="text-align:center;">
+3717
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Technological specialization course
+</td>
+<td style="text-align:center;">
+219
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><img src="finalproj_files/figure-html/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>There are 17 categories of previous qualifications listed in the
+dataset. The most frequent observation is Secondary Education. This is
+also expected since a large majority of students come to universities to
+pursue undergraduate degrees after completing high school/12th grade.
+Compared to Secondary Education, the observations in the rest of the
+categories are minimal.</p>
+</div>
+<div id="mothers-qualification" class="section level3">
+<h3>Mother’s Qualification</h3>
+<div class="table"
+style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:1000px; overflow-x: scroll; width:500px;  margin-left: auto; margin-right: auto;">
+<table class=" lightable-material lightable-striped lightable-hover" style="font-family: &quot;Source Sans Pro&quot;, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<caption>
+Table 5: Mother’s Qualification Frequency Table
+</caption>
+<thead>
+<tr>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Mother’s Qualification Number
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Frequency
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center;">
+10th Year of Schooling
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+11th Year of Schooling—not completed
+</td>
+<td style="text-align:center;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+12th Year of Schooling—not completed
+</td>
+<td style="text-align:center;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+2nd cycle of the general high school course
+</td>
+<td style="text-align:center;">
+130
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+2nd year complementary high school course
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+7th Year (Old)
+</td>
+<td style="text-align:center;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+7th year of schooling
+</td>
+<td style="text-align:center;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+8th year of schooling
+</td>
+<td style="text-align:center;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+9th Year of Schooling—not completed
+</td>
+<td style="text-align:center;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Basic education 1st cycle (4th/5th year) or equivalent
+</td>
+<td style="text-align:center;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Basic Education 2nd Cycle (6th/7th/8th Year) or equivalent
+</td>
+<td style="text-align:center;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Basic Education 3rd Cycle (9th/10th/11th Year) or Equivalent
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Can read without having a 4th year of schooling
+</td>
+<td style="text-align:center;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Cannot read or write
+</td>
+<td style="text-align:center;">
+9
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Complementary High School Course
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Complementary High School Course—not concluded
+</td>
+<td style="text-align:center;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Frequency of Higher Education
+</td>
+<td style="text-align:center;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+General commerce course
+</td>
+<td style="text-align:center;">
+953
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+General Course of Administration and Commerce
+</td>
+<td style="text-align:center;">
+1009
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher Education—bachelor’s degree
+</td>
+<td style="text-align:center;">
+83
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher Education—degree
+</td>
+<td style="text-align:center;">
+438
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher Education—doctorate
+</td>
+<td style="text-align:center;">
+21
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher Education—master’s degree
+</td>
+<td style="text-align:center;">
+49
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Other—11th Year of Schooling
+</td>
+<td style="text-align:center;">
+42
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Secondary Education—12th Year of Schooling or Equivalent
+</td>
+<td style="text-align:center;">
+1069
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Supplementary Accounting and Administration
+</td>
+<td style="text-align:center;">
+562
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Technical-professional course
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Technological specialization course
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Unknown
+</td>
+<td style="text-align:center;">
+8
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><img src="finalproj_files/figure-html/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>For this variable, there are 34 defined categories in the
+documentation, but only 29 categories were found among all observations.
+Since all of the categories in this variable are numbered from 1-29,
+this doesn’t indicate an error in the data. It may perhaps just be
+because both mother’s and father’s qualification values were defined in
+one table since both these variables have the first 29 values in common
+and the last five are additional in the latter variable. There appear to
+be three categories that these observations are primarily distributed
+into. Ordered from highest frequency to lowest, these are Secondary
+Education—12th Year of Schooling or Equivalent, General Course of
+Administration and Commerce, and General commerce course. It appears
+that a large number of students in this dataset have mothers who took
+some form of commerce course. This may indicate a trend or may have some
+correlation with admission or dropout rates that may need to be further
+explored.</p>
+</div>
+<div id="fathers-qualification" class="section level3">
+<h3>Father’s Qualification</h3>
+<div class="table"
+style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:1000px; overflow-x: scroll; width:500px;  margin-left: auto; margin-right: auto;">
+<table class=" lightable-material lightable-striped lightable-hover" style="font-family: &quot;Source Sans Pro&quot;, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<caption>
+Table 6: Father’s Qualification Frequency Table
+</caption>
+<thead>
+<tr>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Father’s Qualification Number
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Frequency
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center;">
+10th Year of Schooling
+</td>
+<td style="text-align:center;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+11th Year of Schooling—not completed
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+12th Year of Schooling—not completed
+</td>
+<td style="text-align:center;">
+5
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+2nd cycle of the general high school course
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+2nd year complementary high school course
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+7th Year (Old)
+</td>
+<td style="text-align:center;">
+10
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+7th year of schooling
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+8th year of schooling
+</td>
+<td style="text-align:center;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+9th Year of Schooling—not completed
+</td>
+<td style="text-align:center;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Basic education 1st cycle (4th/5th year) or equivalent
+</td>
+<td style="text-align:center;">
+1209
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Basic Education 2nd Cycle (6th/7th/8th Year) or equivalent
+</td>
+<td style="text-align:center;">
+702
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Basic Education 3rd Cycle (9th/10th/11th Year) or Equivalent
+</td>
+<td style="text-align:center;">
+968
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Can read without having a 4th year of schooling
+</td>
+<td style="text-align:center;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Cannot read or write
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Complementary High School Course
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Complementary High School Course—not concluded
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Frequency of Higher Education
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+General commerce course
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+General Course of Administration and Commerce
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher Education—bachelor’s degree
+</td>
+<td style="text-align:center;">
+68
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher Education—degree
+</td>
+<td style="text-align:center;">
+282
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher education—degree (1st cycle)
+</td>
+<td style="text-align:center;">
+5
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher Education—doctorate
+</td>
+<td style="text-align:center;">
+18
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher Education—doctorate (3rd cycle)
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher Education—master’s degree
+</td>
+<td style="text-align:center;">
+39
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Higher Education—master’s degree (2nd cycle)
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Other—11th Year of Schooling
+</td>
+<td style="text-align:center;">
+38
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Professional higher technical course
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Secondary Education—12th Year of Schooling or Equivalent
+</td>
+<td style="text-align:center;">
+904
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Specialized higher studies course
+</td>
+<td style="text-align:center;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Supplementary Accounting and Administration
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Technical-professional course
+</td>
+<td style="text-align:center;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Technological specialization course
+</td>
+<td style="text-align:center;">
+20
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Unknown
+</td>
+<td style="text-align:center;">
+112
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><img src="finalproj_files/figure-html/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>For this variable, there are 34 defined categories in the
+documentation, and all of them were found in the dataset. Similar to the
+mother’s qualification variable, the observations in the dataset seem to
+be primarily distributed into three categories - Basic education 1st
+cycle (4th/5th year) or equivalent, Basic Education 3rd Cycle
+(9th/10th/11th Year) or Equivalent, Secondary Education—12th Year of
+Schooling or Equivalent. This may indicate that a large number of
+students may be first generation university students.</p>
+<p>For both the Mother’s Qualification and Father’s Qualification
+variables, there is a certain category called “Unknown” in which a small
+fraction of observations lie (approximately 120 observations). This is a
+very small number of observations as compared to the total number of
+observations in the dataset and can be removed. However, this variable
+may indicate other information, such as the student not knowing/having
+ever met this parent and thus not knowing their qualifications. Due to
+this, we chose to leave all observations with this value in the
+dataset.</p>
+</div>
+<div id="gender" class="section level3">
+<h3>Gender</h3>
+<table class=" lightable-material lightable-striped lightable-hover" style="font-family: &quot;Source Sans Pro&quot;, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<caption>
+Table 7: Gender Frequency Table
+</caption>
+<thead>
+<tr>
+<th style="text-align:center;">
+Gender
+</th>
+<th style="text-align:center;">
+Frequency
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center;">
+Female
+</td>
+<td style="text-align:center;">
+2868
+</td>
+</tr>
+<tr>
+<td style="text-align:center;">
+Male
+</td>
+<td style="text-align:center;">
+1556
+</td>
+</tr>
+</tbody>
+</table>
+<p>Looking at the frequency table, we see that there is a greater number
+of observations that belong to students who are female as opposed to
+those that are male. In fact, there are almost twice the number of
+females as opposed to males in this dataset. A similar trend is further
+noticed in the interactive visualization Figure 1 on the homepage of the
+website. We see that between the ages of 17-20, the number of female
+students is far greater than the number of male students. This may be
+perhaps due to a lack of complete data collected from male students, or
+some other errors at the time of collection. This may skew results in an
+undesirable manner; the full effect of this needs to be investigated
+further.</p>
+</div>
+<div id="unemployment-rate" class="section level3">
+<h3>Unemployment Rate</h3>
+<img src="finalproj_files/figure-html/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" />
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+Table 8: Summary Statistics - Unemployment Rate
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Variable
+</th>
+<th style="text-align:left;">
+N
+</th>
+<th style="text-align:left;">
+Mean
+</th>
+<th style="text-align:left;">
+Median
+</th>
+<th style="text-align:left;">
+Min
+</th>
+<th style="text-align:left;">
+25%
+</th>
+<th style="text-align:left;">
+75%
+</th>
+<th style="text-align:left;">
+Max
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Unemp_rate
+</td>
+<td style="text-align:left;">
+4424
+</td>
+<td style="text-align:left;">
+12
+</td>
+<td style="text-align:left;">
+11
+</td>
+<td style="text-align:left;">
+7.6
+</td>
+<td style="text-align:left;">
+9.4
+</td>
+<td style="text-align:left;">
+14
+</td>
+<td style="text-align:left;">
+16
+</td>
+</tr>
+</tbody>
+</table>
+<p>The summary statistics and histogram tell us that the unemployment
+rates vary from 7.6% to 16.2% over the years, which is in accordance
+with secondary sources of historical data which looked at rates between
+2008 and 2019. There seems to be a high concentration of values around
+the 11% mark, which may indicate that a large number of observations may
+have been from a particular year/time where the unemployment rate
+hovered around this mark. This may potentially skew results.</p>
+</div>
+<div id="target" class="section level3">
+<h3>Target</h3>
+<p><img src="finalproj_files/figure-html/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The Target variable consists of three categories - “Dropped”,
+“Enrolled”, and Graduate”. Taking a look at this pie chart, we see that
+around half the students in this dataset graduated from university, one
+third of the students dropped out, and one sixth are still enrolled in
+university at the time of data collection (these are perhaps students
+who enrolled university in the later years of data collection (ex: 2018,
+2019).</p>
+</div>
+<div id="life-expectancy" class="section level3">
+<h3>Life Expectancy</h3>
+<img src="finalproj_files/figure-html/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" />
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+Table 9: Summary Statistics - Life Expectancy
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Variable
+</th>
+<th style="text-align:left;">
+N
+</th>
+<th style="text-align:left;">
+Mean
+</th>
+<th style="text-align:left;">
+Median
+</th>
+<th style="text-align:left;">
+Min
+</th>
+<th style="text-align:left;">
+25%
+</th>
+<th style="text-align:left;">
+75%
+</th>
+<th style="text-align:left;">
+Max
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Life_expectancy
+</td>
+<td style="text-align:left;">
+4424
+</td>
+<td style="text-align:left;">
+81
+</td>
+<td style="text-align:left;">
+82
+</td>
+<td style="text-align:left;">
+60
+</td>
+<td style="text-align:left;">
+82
+</td>
+<td style="text-align:left;">
+82
+</td>
+<td style="text-align:left;">
+84
+</td>
+</tr>
+</tbody>
+</table>
+<p>Finally, taking a look at the summary statistics and distribution of
+the life expectancy variable, we see that almost all the observations
+are at around the 81 (years) mark. This follows from the fact that a
+majority of observations are from students of Portuguese nationality -
+since we assigned these values based on nationality, it was bound that
+the distribution would be skewed as such. Due to this, it is unclear how
+useful this variable will be in prediction.</p>
+</div>
+<div id="initial-logistic-regression-model" class="section level2">
+<h2>Initial Logistic Regression Model</h2>
+<p>Fitting an initial naive logistic regression model in order to
+explore the formulated question further, we noticed that some variables
+seem to be having significant effects on the response variable whereas
+others seem to not have a significant effect at all. The RMSE value
+calculated is also very low, implying that the model is not very capable
+of prediction in its current form. In order to decipher which factors
+have the most impact on dropout rates and will help us build a model
+that is capable of accurate predictions, we can use stepwise logistic
+regression.</p>
+<p>Another approach could be the use of other machine learning models.
+We can fit other models (such as xgboost, random forests, etc.) that
+help to better describe the data and make more accurate predictions.
+This approach must be explored further in this project.</p>
+</div>
+</div>
+<div id="description-of-modeling" class="section level1">
+<h1>Description of Modeling</h1>
+<p>Building upon our preliminary findings, we decided to make use of
+three machine learning models in order to best answer our question.
+These models are Gradient Boosting, Random Forest, and XGBOOST, which we
+evaluated on accuracy, MSE, and misclassification error. These models
+were chosen as they are popular machine learning models that are
+especially used for classification tasks. Before these models were
+trained, the data was split up into training and testing data, where 80%
+of the data was devoted to training the model, and 20% of the data was
+devoted to testing.</p>
+<p>After tuning the hyperparameters, the gradient boosting model that
+gave us the best results was constructed with 10-fold cross validation,
+5000 trees, shrinkage rate of 0.001, and interaction depth of 2. The
+optimal random forest model was selected with a complexity parameter of
+(INSERT). In order to tune the hyperparameters for the XGBOOST model, we
+performed a grid search with 10-fold cross validation, maximum tree
+depths of 1,3,5,7,9, and 11, 50 to 500 trees, and learning rates of 0.5,
+.3, .1, .01, .001, and 0.0001. The final values used for the model were
+500 trees, maximum tree depth of 3, learning rate of 0.01, and default
+gamma value of 0.</p>
+<p>These models were then used to generate predictions using the
+reserved test dataset, and were evaluated on three main metrics -
+accuracy, misclassification error, MSE.</p>
+<pre><code>## Warning: package &#39;gbm&#39; was built under R version 4.2.3</code></pre>
+<pre><code>## Warning: package &#39;caret&#39; was built under R version 4.2.3</code></pre>
+<pre><code>## Warning: Setting `distribution = &quot;multinomial&quot;` is ill-advised as it is
+## currently broken. It exists only for backwards compatibility. Use at your own
+## risk.
+
+## Warning: Setting `distribution = &quot;multinomial&quot;` is ill-advised as it is
+## currently broken. It exists only for backwards compatibility. Use at your own
+## risk.</code></pre>
+<pre><code>## [1] 1.027861</code></pre>
+</div>
+<div id="results" class="section level1">
+<h1>Results</h1>
+<div id="gradient-boosting" class="section level3">
+<h3>Gradient Boosting</h3>
+<div class="table"
+style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:1000px; overflow-x: scroll; width:500px;  margin-left: auto; margin-right: auto;">
+<table class=" lightable-material lightable-striped lightable-hover" style="font-family: &quot;Source Sans Pro&quot;, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<caption>
+Figure 10: Relative Influence plot (GBM)
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;position: sticky; top:0; background-color: #FFFFFF;">
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Variable
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Relative Influence
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Program
+</td>
+<td style="text-align:center;">
+Program
+</td>
+<td style="text-align:center;">
+39.5135194
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age
+</td>
+<td style="text-align:center;">
+Age
+</td>
+<td style="text-align:center;">
+23.2580573
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mom_quali
+</td>
+<td style="text-align:center;">
+Mom_quali
+</td>
+<td style="text-align:center;">
+11.6628285
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Dad_quali
+</td>
+<td style="text-align:center;">
+Dad_quali
+</td>
+<td style="text-align:center;">
+11.0475296
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Gender
+</td>
+<td style="text-align:center;">
+Gender
+</td>
+<td style="text-align:center;">
+5.4654287
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Prev_quali
+</td>
+<td style="text-align:center;">
+Prev_quali
+</td>
+<td style="text-align:center;">
+4.9838727
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Nationality
+</td>
+<td style="text-align:center;">
+Nationality
+</td>
+<td style="text-align:center;">
+2.2732446
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Unemp_rate
+</td>
+<td style="text-align:center;">
+Unemp_rate
+</td>
+<td style="text-align:center;">
+1.7931935
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Life_expectancy
+</td>
+<td style="text-align:center;">
+Life_expectancy
+</td>
+<td style="text-align:center;">
+0.0023256
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="table"
+style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:1000px; overflow-x: scroll; width:500px;  margin-left: auto; margin-right: auto;">
+<table class=" lightable-material lightable-striped lightable-hover" style="font-family: &quot;Source Sans Pro&quot;, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<caption>
+Table 11: Gradient Boosting Evaluation Metrics
+</caption>
+<thead>
+<tr>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Accuracy
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Misclasssification Error
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+MSE
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center;">
+0.6069
+</td>
+<td style="text-align:center;">
+0.3930723
+</td>
+<td style="text-align:center;">
+1.027861
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The Gradient Boosting model achieved an accuracy of 0.6069, which
+means it correctly predicts the class of the response variable 60.69% of
+the time. a misclassification error of 0.3930723, and a mean squared
+error of 1.027861. The misclassification error suggests that about 39%
+of the predictions made by the were incorrect, while the MSE suggests
+that the model’s predictions were on average 1.027861 units away from
+the true values.</p>
+<p>As for variable importance, we see that the variables Program
+(39.5135194) and Age (23.2580573) seem to have the highest influence on
+the model, with Life_expectancy (0.0023256) having almost negligible
+influence.</p>
+</div>
+<div id="random-forest" class="section level3">
+<h3>Random Forest</h3>
+<img src="finalproj_files/figure-html/unnamed-chunk-23-1.png" width="672" style="display: block; margin: auto;" />
+<div class="table"
+style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:1000px; overflow-x: scroll; width:500px;  margin-left: auto; margin-right: auto;">
+<table class=" lightable-material lightable-striped lightable-hover" style="font-family: &quot;Source Sans Pro&quot;, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<caption>
+Table 13: Random Forest Evaluation Metrics
+</caption>
+<thead>
+<tr>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Accuracy
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Misclasssification Error
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+MSE
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center;">
+0.5791
+</td>
+<td style="text-align:center;">
+0.4209337
+</td>
+<td style="text-align:center;">
+1.15738
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The Random Forest classification model achieved an accuracy of
+0.5791, a misclassification error of 0.4209, and a mean squared error of
+1.1574. The model had a moderate accuracy and a relatively higher
+misclassification error, indicating that it had some difficulty in
+classifying the response variable correctly.</p>
+<p>In terms of variable importance for the random forest model, we
+observe similar behavior as we did for GBM. Taking a look at the
+variable importance plot, we see that Program and Age have the highest
+importance in the model, and Life_expectancy and Nationality have the
+lowest.</p>
+</div>
+<div id="xgboost" class="section level3">
+<h3>XGBOOST</h3>
+<img src="finalproj_files/figure-html/unnamed-chunk-24-1.png" width="672" style="display: block; margin: auto;" />
+<div class="table"
+style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:1000px; overflow-x: scroll; width:500px;  margin-left: auto; margin-right: auto;">
+<table class=" lightable-material lightable-striped lightable-hover" style="font-family: &quot;Source Sans Pro&quot;, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<caption>
+Table 15: XGBOOST Evaluation Metrics
+</caption>
+<thead>
+<tr>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Accuracy
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+Misclasssification Error
+</th>
+<th style="text-align:center;position: sticky; top:0; background-color: #FFFFFF;">
+MSE
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center;">
+0.3133
+</td>
+<td style="text-align:center;">
+0.686747
+</td>
+<td style="text-align:center;">
+0.7567771
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Based on the XGBoost classification model results, the accuracy is
+0.3133 which indicates that the model is not performing well in
+predicting the correct label. The misclassification error is high at
+0.686747, indicating that a significant proportion of the predictions
+are incorrect. The MSE is 0.7567771, indicating that the model’s
+predicted values differ significantly from the actual values. Although
+the MSE is lower than that of GBM and Random Forest, the XGBoost model
+needs improvement in terms of accuracy and misclassification error.</p>
+<p>The variable importance plot generated measures the importance of
+each category of each variable. This generated a very messy plot with
+many variables that had negligible importance on the model. In order to
+display the results that mattered most for this analysis, we filtered
+down the plot so as to display only the top 10 most important variables.
+We see that Age, Gender with the category Male, and Program with the
+category Nursing seem to be the most important variables to this model,
+with Age being the most important. This is very interesting, since the
+variables that have the most influence in this model are slightly
+different from those found in the plots for GBM and Random Forest
+models. For example, Age is the most influential in this model, whereas
+Program was the most influential in the others. The importance of the
+rest of the variables in this model is less than 0.05.</p>
+</div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>Based on the results from the above models, we can see that the GBM
+model outperforms the random forest and XGBOOST models in almost all the
+metrics we are evaluating them against. The XGBOOST model has a lower
+MSE than the GBM model, however, this might be due to the magnitude of
+errors made by the model being small, even though it has misclassified a
+large number of observations. In terms of the particular question we are
+trying to answer, classifying the observations correctly seems to be
+more important than the magnitude of error the model missed the
+classification by. Hence, considering the given dataset, variables, and
+models the GBM model seems to be the most appropriate model to use to
+answer our research question.</p>
+<p>As for answering the question, we can say that we can predict with
+60% accuracy whether a student will drop out of an undergraduate degree
+program, remain enrolled, or graduate based on factors such as gender,
+unemployment rates, nationality, 2019 life expectancy (based on
+nationality), previous qualification, mother’s and father’s
+qualification, and program of study. This is not a very good accuracy,
+implying that the model does not do a good job at prediction.</p>
+<div id="limitations" class="section level3">
+<h3>Limitations</h3>
+<p>There are many limitations to the project that may have affected
+results and may also affect future analyses. We wish to address these in
+the following section. We noticed that many of the variables used in
+these models have little to no influence/importance on the models.
+Removing these variables and/or adding more influential variables that
+are better associated with the response variable may greatly impact the
+prediction quality of the models. However, this may change the scope of
+the research question, which is why this avenue was not explored. Since
+we do not have a year variable, it is unclear how the varying trends in
+social and economic factors through the years impacted our results and
+predictions. In addition to this, almost all of the observations in the
+dataset come from Portuguese nationals which may lead to our results and
+predictions being hard to generalize outside of Portugal (due to
+differences in cultural factors as well as other factors that we cannot
+account for).</p>
+</div>
+</div>
+<div id="summary" class="section level1">
+<h1>Summary</h1>
+<p>This report discusses the issue of inequity that university students
+face and aims to investigate whether certain socioeconomic, demographic,
+and macroeconomic factors can predict a student’s outcome of dropping
+out, remaining enrolled, or graduating. The data used for this
+investigation was primarily obtained from a Kaggle dataset and the World
+Bank Gender Data Portal API. The Kaggle dataset was created by Realinho
+et al (2022) and included academic, socioeconomic, and macroeconomic
+data from Portugal for students enrolled between 2008 and 2019. The
+World Bank data was used to extract 2019 life expectancy values based on
+the nationality of each student in the dataset. These datasets were then
+merged, cleaned, and wrangled, with unnecessary columns dropped and
+numeric encoding reverted. Data exploration involved examining
+distributions of all variables, frequencies of categorical variables,
+and summary statistics for numerical variables. We initially used a
+logistic regression model and found that some variables had a
+significant impact on the response variable while others did not. Three
+machine learning models (Gradient Boosting, Random Forest, and XGBOOST)
+were then used to generate predictions, which were evaluated using
+accuracy, misclassification error, and mean squared error (MSE). The
+results showed that the Gradient Boosting model performed the best. The
+XGBOOST model had the lowest accuracy and highest misclassification
+error. Overall, we concluded that we can predict a student’s outcome of
+dropping out, remaining enrolled, or graduating based on certain
+socioeconomic, demographic, and macroeconomic factors with 60% accuracy,
+however, further modeling and analysis are needed to better predict
+these outcomes.</p>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<ol style="list-style-type: decimal">
+<li>Realinho, V., Machado, J., Baptista, L., &amp; Martins, M. V.
+(2022). Predicting Student Dropout and Academic Success. Data, 7(11),
+146. MDPI AG. Retrieved from <a
+href="http://dx.doi.org/10.3390/data7110146"
+class="uri">http://dx.doi.org/10.3390/data7110146</a></li>
+</ol>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

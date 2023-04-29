@@ -3,7 +3,5 @@ output_dir: "docs"
 navbar:
   title: "Final Project Website"
   left:
-    - text: "Lab 12"
+    - text: "Home"
       href: index.html
-    - text: "A5"
-      href: HW5.html
