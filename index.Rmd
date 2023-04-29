@@ -289,7 +289,7 @@ This visualization shows the number of students by program that dropped out, gra
 
 Here is a link to the PDF report.
 
-[Download PDF](https://github.com/mahathicodes/jsc370-final-project/blob/master/finalproj.pdf){.btn .btn-primary}
+[Download PDF](https://github.com/mahathicodes/jsc370-final-project/blob/master/source%20code%20%2B%20reports/finalproj.pdf){.btn .btn-primary}
 
 Here is a link to the presentation. The passcode to access it is hiGgP&.1wV
 
